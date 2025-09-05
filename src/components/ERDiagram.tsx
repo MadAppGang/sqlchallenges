@@ -83,7 +83,7 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	};
 
 	return (
-		<div className="relative" style={{ width: '260px', zIndex: 10 }}>
+		<div className="relative" style={{ width: '260px', zIndex: 1000 }}>
 			{/* Connection handles for React Flow */}
 			<Handle
 				type="target"
@@ -110,7 +110,7 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 				style={{ background: '#6366f1', width: '10px', height: '10px' }}
 			/>
 			
-			<div className="border border-gray-400 rounded-md shadow-md overflow-hidden bg-white">
+			<div className="border border-gray-400 rounded-md shadow-md overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
 				{/* Table Header - Black background */}
 				<div className="px-4 py-3 flex items-center gap-2" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
 					<Database className="w-4 h-4" style={{ color: '#9CA3AF' }} />
@@ -377,8 +377,8 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 						<Controls showInteractive={false} />
 						<Panel
 							position="top-left"
-							className="bg-white/95 backdrop-blur border border-gray-300 rounded-lg p-3 text-xs shadow-lg"
-							style={{ margin: '10px' }}
+							className="bg-white border border-gray-300 rounded-lg p-3 text-xs shadow-lg"
+							style={{ margin: '10px', backgroundColor: '#ffffff', zIndex: 5 }}
 						>
 							<div className="space-y-1.5">
 								<div className="font-semibold text-gray-800 mb-2">Legend</div>
