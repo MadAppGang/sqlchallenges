@@ -376,10 +376,12 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 						<Background color="#f3f4f6" gap={16} />
 						<Controls showInteractive={false} />
 						<Panel
-							position="bottom-left"
+							position="top-left"
 							className="bg-white/95 backdrop-blur border border-gray-300 rounded-lg p-3 text-xs shadow-lg"
+							style={{ margin: '10px' }}
 						>
-							<div className="space-y-2">
+							<div className="space-y-1.5">
+								<div className="font-semibold text-gray-800 mb-2">Legend</div>
 								<div className="flex items-center gap-2">
 									<Key className="w-3.5 h-3.5 text-gray-700" />
 									<span className="text-gray-700">Primary Key</span>
