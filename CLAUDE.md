@@ -47,8 +47,8 @@ npm run build  # Build for production (outputs to /build)
 5. **Responsive Results Display**: Table view with execution time tracking
 
 ## Important Notes
-- No test, lint, or typecheck scripts configured - add if needed
+- Lint scripts available: `npm run lint`, `npm run lint:fix`, `npm run format` (using Biome)
 - Uses extensive Radix UI component library for accessibility
 - Vite config includes specific version aliases for all dependencies
 - Build target: ESNext, outputs to /build directory
-- please use prism to format the files
+- Use Biome for code formatting (configured with @biomejs/biome)

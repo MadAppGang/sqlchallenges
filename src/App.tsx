@@ -1,7 +1,7 @@
 import { Share2, Users } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CodeEditor from "./components/CodeEditor";
-import DataStructure from "./components/DataStructure";
+import DatabaseSchema from "./components/DatabaseSchema";
 import QueryResults from "./components/QueryResults";
 import TaskDescription from "./components/TaskDescription";
 import { Badge } from "./components/ui/badge";
@@ -18,10 +18,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "./components/ui/select";
-import { executeSqlQuery, mockChallenges } from "./data/mockChallenges";
+import { executeQuery, initializeDatabase } from "./lib/database-init";
+import { getAllTasks, getTaskById } from "./lib/taskParser";
 
 export default function App() {
 	const [currentChallengeId, setCurrentChallengeId] = useState(1);
+	const [isDbReady, setIsDbReady] = useState(false);
+	const [dbError, setDbError] = useState<string | null>(null);
 	const [queryResults, setQueryResults] = useState<
 		Record<string, string | number | null>[]
 	>([]);
@@ -36,9 +39,21 @@ export default function App() {
 		{ name: "Bob", color: "#10B981" },
 	];
 
-	const currentChallenge = mockChallenges.find(
-		(c) => c.id === currentChallengeId,
-	);
+	// Initialize database on mount
+	useEffect(() => {
+		initializeDatabase()
+			.then(() => {
+				setIsDbReady(true);
+				console.log("Database ready!");
+			})
+			.catch((error) => {
+				console.error("Failed to initialize database:", error);
+				setDbError("Failed to initialize database. Please refresh the page.");
+			});
+	}, []);
+
+	const tasks = getAllTasks();
+	const currentTask = getTaskById(currentChallengeId);
 
 	const handleChallengeSelect = (challengeId: string) => {
 		const id = parseInt(challengeId, 10);
@@ -56,12 +71,18 @@ export default function App() {
 	const handleRunQuery = async (query: string) => {
 		setIsLoading(true);
 		setQueryError(undefined);
-		const startTime = Date.now();
 
 		try {
-			const results = await executeSqlQuery(query);
-			setQueryResults(results);
-			setExecutionTime(Date.now() - startTime);
+			const { results, error, executionTime } = await executeQuery(query);
+			
+			if (error) {
+				setQueryError(error);
+				setQueryResults([]);
+				setExecutionTime(undefined);
+			} else {
+				setQueryResults(results);
+				setExecutionTime(executionTime);
+			}
 		} catch (error) {
 			console.error("Query execution failed:", error);
 			setQueryError(
@@ -81,8 +102,30 @@ export default function App() {
 		alert("Collaboration link copied to clipboard!");
 	};
 
-	if (!currentChallenge) {
-		return <div>Challenge not found</div>;
+	if (dbError) {
+		return (
+			<div className="h-screen flex items-center justify-center">
+				<div className="text-center">
+					<h2 className="text-xl font-semibold text-red-600 mb-2">Database Error</h2>
+					<p className="text-gray-600">{dbError}</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (!isDbReady) {
+		return (
+			<div className="h-screen flex items-center justify-center">
+				<div className="text-center">
+					<h2 className="text-xl font-semibold mb-2">Loading Database...</h2>
+					<p className="text-gray-600">Initializing PostgreSQL in your browser</p>
+				</div>
+			</div>
+		);
+	}
+
+	if (!currentTask) {
+		return <div>Task not found</div>;
 	}
 
 	return (
@@ -100,25 +143,25 @@ export default function App() {
 								<SelectValue placeholder="Select a challenge" />
 							</SelectTrigger>
 							<SelectContent>
-								{mockChallenges.map((challenge) => (
+								{tasks.map((task) => (
 									<SelectItem
-										key={challenge.id}
-										value={challenge.id.toString()}
+										key={task.metadata.id}
+										value={task.metadata.id.toString()}
 									>
 										<div className="flex items-center gap-2">
 											<Badge
 												variant={
-													challenge.difficulty === "Easy"
+													task.metadata.difficulty === "Easy"
 														? "secondary"
-														: challenge.difficulty === "Medium"
+														: task.metadata.difficulty === "Medium"
 															? "default"
 															: "destructive"
 												}
 												className="text-xs"
 											>
-												{challenge.difficulty}
+												{task.metadata.difficulty}
 											</Badge>
-											<span>{challenge.title}</span>
+											<span>{task.metadata.title}</span>
 										</div>
 									</SelectItem>
 								))}
@@ -144,13 +187,8 @@ export default function App() {
 						<ResizablePanelGroup direction="vertical">
 							{/* Task Description */}
 							<ResizablePanel defaultSize={40} minSize={25}>
-								<div className="h-full p-4">
-									<TaskDescription
-										title={currentChallenge.title}
-										difficulty={currentChallenge.difficulty}
-										description={currentChallenge.description}
-										expectedOutput={currentChallenge.expectedOutput}
-									/>
+								<div className="h-full overflow-auto">
+									<TaskDescription task={currentTask} />
 								</div>
 							</ResizablePanel>
 
@@ -159,7 +197,7 @@ export default function App() {
 							{/* Data Structure */}
 							<ResizablePanel defaultSize={60} minSize={40}>
 								<div className="h-full p-4">
-									<DataStructure tables={currentChallenge.tables} />
+									<DatabaseSchema />
 								</div>
 							</ResizablePanel>
 						</ResizablePanelGroup>

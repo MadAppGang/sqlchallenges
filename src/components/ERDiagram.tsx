@@ -12,7 +12,15 @@ import {
 import type React from "react";
 import { useCallback, useMemo } from "react";
 import "@xyflow/react/dist/style.css";
-import { Database, Key, Link } from "lucide-react";
+import {
+	Database,
+	Key,
+	Link2,
+	Hash,
+	Diamond,
+	Circle,
+	CircleDot,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface TableSchema {
@@ -21,6 +29,14 @@ interface TableSchema {
 		name: string;
 		type: string;
 		description?: string;
+		primaryKey?: boolean;
+		foreignKey?: boolean;
+		foreignKeyReference?: {
+			table: string;
+			column: string;
+		};
+		unique?: boolean;
+		nullable?: boolean;
 	}[];
 	sampleData: Record<string, string | number | null>[];
 }
@@ -33,79 +49,97 @@ interface ERDiagramProps {
 const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	const { table } = data;
 
-	const getPrimaryKeys = (columns: TableSchema["columns"]) => {
-		return columns.filter(
-			(col) =>
-				col.name.toLowerCase() === "id" ||
-				col.description?.toLowerCase().includes("unique") ||
-				col.description?.toLowerCase().includes("identifier"),
-		);
-	};
+	const detectColumnAttributes = (column: TableSchema["columns"][0], tableName: string) => {
+		const isPrimaryKey =
+			column.primaryKey ||
+			column.name.toLowerCase() === "id" ||
+			column.description?.toLowerCase().includes("primary key");
 
-	const getForeignKeys = (columns: TableSchema["columns"]) => {
-		return columns.filter(
-			(col) =>
-				col.name.includes("_id") ||
-				col.description?.toLowerCase().includes("foreign key"),
-		);
-	};
+		// A column ending with _id is a foreign key ONLY if it's not the primary key of its own table
+		// For example: category_id in categories table is a PK, not FK
+		// But category_id in products table is a FK
+		const columnBaseName = column.name.replace(/_id$/, "");
+		const tableBaseName = tableName.replace(/s$/, ""); // Remove plural 's'
+		
+		const isForeignKey =
+			column.foreignKey ||
+			(column.name.endsWith("_id") && 
+			 !isPrimaryKey && 
+			 columnBaseName !== tableBaseName) ||
+			column.description?.toLowerCase().includes("foreign key");
 
-	const getDataType = (type: string) => {
-		return type.split("(")[0]; // Extract base type from VARCHAR(100) etc.
-	};
+		const isUnique =
+			column.unique || column.description?.toLowerCase().includes("unique");
 
-	const primaryKeys = getPrimaryKeys(table.columns);
-	const foreignKeys = getForeignKeys(table.columns);
+		const isNullable =
+			column.nullable !== false &&
+			!isPrimaryKey &&
+			!column.description?.toLowerCase().includes("not null");
+
+		return { isPrimaryKey, isForeignKey, isUnique, isNullable };
+	};
 
 	return (
-		<div className="bg-card border-2 border-primary/20 rounded-lg shadow-lg w-56">
+		<div className="bg-white border border-gray-300 rounded-lg shadow-sm w-72 overflow-hidden">
 			{/* Table Header */}
-			<div className="bg-primary text-primary-foreground px-2.5 py-1.5 rounded-t-lg">
-				<div className="flex items-center gap-1.5">
-					<Database className="w-3.5 h-3.5" />
-					<span className="font-semibold text-xs">{table.tableName}</span>
-				</div>
+			<div className="bg-gray-900 text-white px-3 py-2 flex items-center gap-2">
+				<Database className="w-4 h-4" />
+				<span className="font-medium text-sm">{table.tableName}</span>
 			</div>
 
 			{/* Columns */}
-			<div className="divide-y divide-border">
+			<div className="divide-y divide-gray-200">
 				{table.columns.map((column, index) => {
-					const isPrimaryKey = primaryKeys.some(
-						(pk) => pk.name === column.name,
-					);
-					const isForeignKey = foreignKeys.some(
-						(fk) => fk.name === column.name,
-					);
+					const { isPrimaryKey, isForeignKey, isUnique, isNullable } =
+						detectColumnAttributes(column, table.tableName);
+
+					const typeDisplay = column.type
+						.replace(/character varying(\(\d+\))?/gi, "varchar")
+						.replace(/character(\(\d+\))?/gi, "char")
+						.replace(/integer/gi, "int")
+						.replace(/numeric(\([\d,]+\))?/gi, "decimal")
+						.replace(/text/gi, "text")
+						.replace(/timestamp with time zone/gi, "timestamptz")
+						.replace(/timestamp without time zone/gi, "timestamp")
+						.replace(/timestamp/gi, "timestamp")
+						.replace(/boolean/gi, "bool")
+						.replace(/date/gi, "date")
+						.replace(/\(.*\)/g, ""); // Remove any remaining parentheses
 
 					return (
 						<div
 							key={index}
-							className="px-2.5 py-1 hover:bg-muted/30 transition-colors"
+							className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50 transition-colors"
 						>
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-1 flex-1 min-w-0">
-									{isPrimaryKey && (
-										<Key className="w-2.5 h-2.5 text-yellow-600 flex-shrink-0" />
-									)}
-									{isForeignKey && (
-										<Link className="w-2.5 h-2.5 text-blue-600 flex-shrink-0" />
-									)}
-									<code className="font-mono text-xs font-medium truncate">
-										{column.name}
-									</code>
-								</div>
-								<div className="text-xs text-muted-foreground ml-1 flex-shrink-0">
-									{getDataType(column.type)}
-								</div>
+							{/* Icons */}
+							<div className="flex items-center gap-0.5 min-w-[40px]">
+								{isPrimaryKey && <Key className="w-3.5 h-3.5 text-amber-600" />}
+								{isForeignKey && !isPrimaryKey && (
+									<Link2 className="w-3.5 h-3.5 text-blue-600" />
+								)}
+								{/* Show # for ID fields */}
+								{(isPrimaryKey || isForeignKey) && (
+									<Hash className="w-3.5 h-3.5 text-gray-500" />
+								)}
+								{isNullable ? (
+									<Circle className="w-3 h-3 text-gray-400" />
+								) : (
+									<CircleDot className="w-3 h-3 text-gray-700" />
+								)}
 							</div>
+
+							{/* Column name */}
+							<span className="flex-1 font-mono text-sm text-gray-800">
+								{column.name}
+							</span>
+
+							{/* Data type */}
+							<span className="text-xs text-gray-500 font-mono">
+								{typeDisplay}
+							</span>
 						</div>
 					);
 				})}
-			</div>
-
-			{/* Row count */}
-			<div className="px-2.5 py-1 bg-muted/30 rounded-b-lg text-xs text-muted-foreground">
-				{table.sampleData.length} rows
 			</div>
 		</div>
 	);
@@ -123,7 +157,7 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 
 		// Create nodes for each table with improved positioning
 		const tableCount = tables.length;
-		const cols = Math.min(6, Math.ceil(Math.sqrt(tableCount * 1.3))); // Max 6 columns for larger grid
+		const cols = Math.min(3, Math.ceil(Math.sqrt(tableCount))); // Max 3 columns for better layout
 		const _rows = Math.ceil(tableCount / cols);
 
 		tables.forEach((table, index) => {
@@ -134,65 +168,24 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 				id: table.tableName,
 				type: "table",
 				position: {
-					x: col * 240 + 15,
-					y: row * 180 + 15,
+					x: col * 320 + 50, // Increased spacing between columns
+					y: row * 350 + 50, // Increased spacing between rows
 				},
 				data: { table },
 				draggable: true,
 			});
 		});
 
-		// Create edges based on foreign key relationships
+		// Create edges based on foreign key relationships from the database
 		tables.forEach((table) => {
 			table.columns.forEach((column) => {
-				// Check if this column is a foreign key
-				if (
-					column.name.includes("_id") ||
-					column.description?.toLowerCase().includes("foreign key")
-				) {
-					// Try to find the referenced table
-					let referencedTable = "";
-
-					// Map common foreign key patterns
-					const fkMappings: Record<string, string> = {
-						customer_id: "customers",
-						product_id: "products",
-						order_id: "orders",
-						category_id: "categories",
-						supplier_id: "suppliers",
-						warehouse_id: "warehouses",
-						manager_id: "employees",
-						department_id: "departments",
-						coupon_id: "coupons",
-						processed_by: "employees",
-						changed_by: "employees",
-						tag_id: "tags",
-						wishlist_id: "wishlists",
-						cart_id: "shopping_carts",
-						plan_id: "subscription_plans",
-						assigned_to: "employees",
-						from_currency_id: "currencies",
-						to_currency_id: "currencies",
-						payment_method_id: "payments",
-					};
-
-					referencedTable = fkMappings[column.name] || "";
-
-					// Alternative: parse from description
-					if (!referencedTable && column.description) {
-						const match = column.description.match(
-							/foreign key to (\w+) table/i,
-						);
-						if (match) {
-							referencedTable = match[1];
-						}
-					}
-
-					// Create edge if referenced table exists
-					if (
-						referencedTable &&
-						tables.some((t) => t.tableName === referencedTable)
-					) {
+				// Use the foreign key reference from the database query
+				if (column.foreignKey && column.foreignKeyReference) {
+					const referencedTable = column.foreignKeyReference.table;
+					console.log(`Creating edge: ${table.tableName}.${column.name} -> ${referencedTable}`);
+					
+					// Create edge if referenced table exists in our tables
+					if (tables.some((t) => t.tableName === referencedTable)) {
 						const edgeId = `${table.tableName}-${referencedTable}-${column.name}`;
 
 						// Avoid duplicate edges
@@ -225,7 +218,8 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 				}
 			});
 		});
-
+		
+		console.log("Total edges created:", edges.length, edges);
 		return { nodes, edges };
 	}, [tables]);
 
@@ -255,29 +249,37 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 						nodeTypes={nodeTypes}
 						connectionMode={ConnectionMode.Loose}
 						fitView
-						fitViewOptions={{ padding: 0.02, minZoom: 0.15, maxZoom: 0.8 }}
-						minZoom={0.1}
-						maxZoom={1.0}
-						defaultViewport={{ x: 0, y: 0, zoom: 0.4 }}
+						fitViewOptions={{ padding: 0.1, minZoom: 0.3, maxZoom: 1.5 }}
+						minZoom={0.2}
+						maxZoom={2.0}
+						defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
 					>
 						<Background />
 						<Controls showInteractive={false} />
 						<Panel
 							position="bottom-left"
-							className="bg-card border border-border rounded-lg p-3 text-xs"
+							className="bg-white border border-gray-300 rounded-lg p-3 text-xs shadow-sm"
 						>
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
-									<Key className="w-3 h-3 text-yellow-600" />
-									<span>Primary Key</span>
+									<Key className="w-3.5 h-3.5 text-amber-600" />
+									<span className="text-gray-700">Primary Key</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<Link className="w-3 h-3 text-blue-600" />
-									<span>Foreign Key</span>
+									<Link2 className="w-3.5 h-3.5 text-blue-600" />
+									<span className="text-gray-700">Foreign Key</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<div className="w-4 h-0.5 bg-indigo-500"></div>
-									<span>Relationship</span>
+									<Hash className="w-3.5 h-3.5 text-gray-500" />
+									<span className="text-gray-700">Identity</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<Circle className="w-3 h-3 text-gray-400" />
+									<span className="text-gray-700">Nullable</span>
+								</div>
+								<div className="flex items-center gap-2">
+									<CircleDot className="w-3 h-3 text-gray-700" />
+									<span className="text-gray-700">Non-Nullable</span>
 								</div>
 							</div>
 						</Panel>

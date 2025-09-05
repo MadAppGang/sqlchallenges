@@ -4,6 +4,12 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
 	plugins: [react()],
+	optimizeDeps: {
+		exclude: ["@electric-sql/pglite"],
+	},
+	worker: {
+		format: "es",
+	},
 	resolve: {
 		extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
 		alias: {
