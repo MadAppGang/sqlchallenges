@@ -82,92 +82,93 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	};
 
 	return (
-		<div className="bg-white border border-gray-300 rounded-lg shadow-sm w-72 overflow-hidden relative">
+		<div className="relative" style={{ width: '260px', zIndex: 10 }}>
 			{/* Connection handles for React Flow */}
 			<Handle
 				type="target"
 				position={Position.Left}
 				id="left"
-				style={{ background: '#6366f1' }}
+				style={{ background: '#6366f1', width: '10px', height: '10px' }}
 			/>
 			<Handle
 				type="source"
 				position={Position.Right}
 				id="right"
-				style={{ background: '#6366f1' }}
+				style={{ background: '#6366f1', width: '10px', height: '10px' }}
 			/>
 			<Handle
 				type="target"
 				position={Position.Top}
 				id="top"
-				style={{ background: '#6366f1' }}
+				style={{ background: '#6366f1', width: '10px', height: '10px' }}
 			/>
 			<Handle
 				type="source"
 				position={Position.Bottom}
 				id="bottom"
-				style={{ background: '#6366f1' }}
+				style={{ background: '#6366f1', width: '10px', height: '10px' }}
 			/>
 			
-			{/* Table Header */}
-			<div className="bg-gray-900 text-white px-3 py-2 flex items-center gap-2">
-				<Database className="w-4 h-4" />
-				<span className="font-medium text-sm">{table.tableName}</span>
-			</div>
+			<div className="border border-gray-400 rounded-md shadow-md overflow-hidden bg-white">
+				{/* Table Header - Black background */}
+				<div className="px-4 py-3 flex items-center gap-2" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
+					<Database className="w-4 h-4" style={{ color: '#9CA3AF' }} />
+					<span className="font-medium text-sm" style={{ color: '#ffffff' }}>{table.tableName}</span>
+				</div>
 
-			{/* Columns */}
-			<div className="divide-y divide-gray-200">
-				{table.columns.map((column, index) => {
-					const { isPrimaryKey, isForeignKey, isUnique, isNullable } =
-						detectColumnAttributes(column, table.tableName);
+				{/* Columns - Solid white background */}
+				<div className="bg-white" style={{ backgroundColor: '#ffffff' }}>
+					{table.columns.map((column, index) => {
+						const { isPrimaryKey, isForeignKey, isUnique, isNullable } =
+							detectColumnAttributes(column, table.tableName);
 
-					const typeDisplay = column.type
-						.replace(/character varying(\(\d+\))?/gi, "varchar")
-						.replace(/character(\(\d+\))?/gi, "char")
-						.replace(/integer/gi, "int")
-						.replace(/numeric(\([\d,]+\))?/gi, "decimal")
-						.replace(/text/gi, "text")
-						.replace(/timestamp with time zone/gi, "timestamptz")
-						.replace(/timestamp without time zone/gi, "timestamp")
-						.replace(/timestamp/gi, "timestamp")
-						.replace(/boolean/gi, "bool")
-						.replace(/date/gi, "date")
-						.replace(/\(.*\)/g, ""); // Remove any remaining parentheses
+						const typeDisplay = column.type
+							.replace(/character varying(\(\d+\))?/gi, "varchar")
+							.replace(/character(\(\d+\))?/gi, "char")
+							.replace(/integer/gi, "int")
+							.replace(/numeric(\([\d,]+\))?/gi, "decimal")
+							.replace(/text/gi, "text")
+							.replace(/timestamp with time zone/gi, "timestamptz")
+							.replace(/timestamp without time zone/gi, "timestamp")
+							.replace(/timestamp/gi, "timestamp")
+							.replace(/boolean/gi, "bool")
+							.replace(/date/gi, "date")
+							.replace(/\(.*\)/g, ""); // Remove any remaining parentheses
 
-					return (
-						<div
-							key={index}
-							className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50 transition-colors"
-						>
-							{/* Icons */}
-							<div className="flex items-center gap-0.5 min-w-[40px]">
-								{isPrimaryKey && <Key className="w-3.5 h-3.5 text-amber-600" />}
-								{isForeignKey && !isPrimaryKey && (
-									<Link2 className="w-3.5 h-3.5 text-blue-600" />
-								)}
-								{/* Show # for ID fields */}
-								{(isPrimaryKey || isForeignKey) && (
-									<Hash className="w-3.5 h-3.5 text-gray-500" />
-								)}
-								{isNullable ? (
-									<Circle className="w-3 h-3 text-gray-400" />
-								) : (
-									<CircleDot className="w-3 h-3 text-gray-700" />
-								)}
+						return (
+							<div
+								key={index}
+								className="px-3 py-2 flex items-center gap-2 bg-white hover:bg-gray-50 transition-colors border-b border-gray-200 last:border-b-0"
+							>
+								{/* Icons */}
+								<div className="flex items-center gap-0.5">
+									{isPrimaryKey && <Key className="w-3.5 h-3.5 text-gray-600" />}
+									{isForeignKey && !isPrimaryKey && (
+										<Link2 className="w-3.5 h-3.5 text-gray-600" />
+									)}
+									{isNullable ? (
+										<Circle className="w-3 h-3 text-gray-400" />
+									) : (
+										<CircleDot className="w-3 h-3 text-gray-700 fill-gray-700" />
+									)}
+									{(isPrimaryKey || isForeignKey) && (
+										<Hash className="w-3.5 h-3.5 text-gray-500" />
+									)}
+								</div>
+
+								{/* Column name */}
+								<span className="flex-1 font-mono text-xs text-gray-800">
+									{column.name}
+								</span>
+
+								{/* Data type */}
+								<span className="text-xs text-gray-500 font-mono">
+									{typeDisplay}
+								</span>
 							</div>
-
-							{/* Column name */}
-							<span className="flex-1 font-mono text-sm text-gray-800">
-								{column.name}
-							</span>
-
-							{/* Data type */}
-							<span className="text-xs text-gray-500 font-mono">
-								{typeDisplay}
-							</span>
-						</div>
-					);
-				})}
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);
@@ -196,8 +197,8 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 				id: table.tableName,
 				type: "table",
 				position: {
-					x: col * 320 + 50, // Increased spacing between columns
-					y: row * 350 + 50, // Increased spacing between rows
+					x: col * 300 + 50, // Spacing between columns
+					y: row * 320 + 50, // Spacing between rows
 				},
 				data: { table },
 				draggable: true,
@@ -279,36 +280,36 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 						nodeTypes={nodeTypes}
 						connectionMode={ConnectionMode.Loose}
 						fitView
-						fitViewOptions={{ padding: 0.1, minZoom: 0.3, maxZoom: 1.5 }}
-						minZoom={0.2}
-						maxZoom={2.0}
-						defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
+						fitViewOptions={{ padding: 0.05, minZoom: 0.5, maxZoom: 2 }}
+						minZoom={0.3}
+						maxZoom={2.5}
+						defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
 					>
-						<Background />
+						<Background color="#f3f4f6" gap={16} />
 						<Controls showInteractive={false} />
 						<Panel
 							position="bottom-left"
-							className="bg-white border border-gray-300 rounded-lg p-3 text-xs shadow-sm"
+							className="bg-white/95 backdrop-blur border border-gray-300 rounded-lg p-3 text-xs shadow-lg"
 						>
 							<div className="space-y-2">
 								<div className="flex items-center gap-2">
-									<Key className="w-3.5 h-3.5 text-amber-600" />
+									<Key className="w-3.5 h-3.5 text-gray-700" />
 									<span className="text-gray-700">Primary Key</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<Link2 className="w-3.5 h-3.5 text-blue-600" />
+									<Link2 className="w-3.5 h-3.5 text-gray-700" />
 									<span className="text-gray-700">Foreign Key</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<Hash className="w-3.5 h-3.5 text-gray-500" />
+									<Hash className="w-3.5 h-3.5 text-gray-600" />
 									<span className="text-gray-700">Identity</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<Circle className="w-3 h-3 text-gray-400" />
+									<Circle className="w-3.5 h-3.5 text-gray-400" />
 									<span className="text-gray-700">Nullable</span>
 								</div>
 								<div className="flex items-center gap-2">
-									<CircleDot className="w-3 h-3 text-gray-700" />
+									<CircleDot className="w-3.5 h-3.5 text-gray-700 fill-gray-700" />
 									<span className="text-gray-700">Non-Nullable</span>
 								</div>
 							</div>
