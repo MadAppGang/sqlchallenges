@@ -1,12 +1,12 @@
 import Editor, { type Monaco } from "@monaco-editor/react";
 import { Play, Users } from "lucide-react";
+import type { editor } from "monaco-editor";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { databaseSchema } from "../lib/databaseSchema";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import type { editor } from "monaco-editor";
-import { databaseSchema } from "../lib/databaseSchema";
 
 interface CodeEditorProps {
 	initialQuery?: string;
@@ -55,7 +55,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 		onRunQuery?.(query);
 	};
 
-
 	// Force editor to resize when container changes
 	useEffect(() => {
 		const handleResize = () => {
@@ -68,14 +67,16 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 		};
 
 		// Listen for window resize
-		window.addEventListener('resize', handleResize);
-		
+		window.addEventListener("resize", handleResize);
+
 		// Use ResizeObserver to detect container size changes
 		let resizeObserver: ResizeObserver | null = null;
-		
+
 		// Set up observer after a short delay to ensure DOM is ready
 		const timeoutId = setTimeout(() => {
-			const editorContainer = document.querySelector('.monaco-editor-container');
+			const editorContainer = document.querySelector(
+				".monaco-editor-container",
+			);
 			if (editorContainer) {
 				resizeObserver = new ResizeObserver(() => {
 					handleResize();
@@ -85,7 +86,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 		}, 100);
 
 		return () => {
-			window.removeEventListener('resize', handleResize);
+			window.removeEventListener("resize", handleResize);
 			clearTimeout(timeoutId);
 			resizeObserver?.disconnect();
 		};
@@ -123,7 +124,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 					"WHERE",
 					"JOIN",
 					"INNER",
-					"LEFT", 
+					"LEFT",
 					"RIGHT",
 					"FULL",
 					"OUTER",
@@ -193,8 +194,14 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 					{ name: "LENGTH", signature: "LENGTH(${1:string})" },
 					{ name: "UPPER", signature: "UPPER(${1:string})" },
 					{ name: "LOWER", signature: "LOWER(${1:string})" },
-					{ name: "SUBSTRING", signature: "SUBSTRING(${1:string}, ${2:start}, ${3:length})" },
-					{ name: "REPLACE", signature: "REPLACE(${1:string}, ${2:old}, ${3:new})" },
+					{
+						name: "SUBSTRING",
+						signature: "SUBSTRING(${1:string}, ${2:start}, ${3:length})",
+					},
+					{
+						name: "REPLACE",
+						signature: "REPLACE(${1:string}, ${2:old}, ${3:new})",
+					},
 					{ name: "TRIM", signature: "TRIM(${1:string})" },
 					{ name: "NOW", signature: "NOW()" },
 					{ name: "DATE", signature: "DATE(${1:expression})" },
@@ -203,9 +210,15 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 					{ name: "DAY", signature: "DAY(${1:date})" },
 					{ name: "COALESCE", signature: "COALESCE(${1:value1}, ${2:value2})" },
 					{ name: "CAST", signature: "CAST(${1:expression} AS ${2:datatype})" },
-					{ name: "ROW_NUMBER", signature: "ROW_NUMBER() OVER (ORDER BY ${1:column})" },
+					{
+						name: "ROW_NUMBER",
+						signature: "ROW_NUMBER() OVER (ORDER BY ${1:column})",
+					},
 					{ name: "RANK", signature: "RANK() OVER (ORDER BY ${1:column})" },
-					{ name: "DENSE_RANK", signature: "DENSE_RANK() OVER (ORDER BY ${1:column})" },
+					{
+						name: "DENSE_RANK",
+						signature: "DENSE_RANK() OVER (ORDER BY ${1:column})",
+					},
 				];
 
 				functions.forEach((func) => {
@@ -217,7 +230,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 							insertTextRules:
 								monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
 							documentation: `SQL function: ${func.name}`,
-							detail: func.signature.replace(/\$\{\d+:([^}]+)\}/g, '$1'),
+							detail: func.signature.replace(/\$\{\d+:([^}]+)\}/g, "$1"),
 							range: range,
 							sortText: "2" + func.name,
 						});
@@ -244,7 +257,10 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 				databaseSchema.forEach((table) => {
 					table.columns.forEach((column) => {
 						// Add simple column name only once
-						if (!uniqueColumns.has(column.name) && !uniqueSuggestions.has(column.name)) {
+						if (
+							!uniqueColumns.has(column.name) &&
+							!uniqueSuggestions.has(column.name)
+						) {
 							uniqueColumns.add(column.name);
 							uniqueSuggestions.set(column.name, {
 								label: column.name,
@@ -252,9 +268,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 								insertText: column.name,
 								documentation: column.description || `Column name`,
 								detail: `Column found in: ${databaseSchema
-									.filter(t => t.columns.some(c => c.name === column.name))
-									.map(t => t.tableName)
-									.join(', ')}`,
+									.filter((t) => t.columns.some((c) => c.name === column.name))
+									.map((t) => t.tableName)
+									.join(", ")}`,
 								range: range,
 								sortText: "4" + column.name,
 							});
@@ -295,7 +311,8 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 					},
 					{
 						label: "JOIN tables",
-						insertText: "JOIN ${1:table2} ON ${2:table1}.${3:column} = ${1:table2}.${4:column}",
+						insertText:
+							"JOIN ${1:table2} ON ${2:table1}.${3:column} = ${1:table2}.${4:column}",
 						detail: "Join two tables",
 					},
 					{
@@ -330,12 +347,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 		});
 
 		// Add keyboard shortcut for running query
-		editor.addCommand(
-			monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-			() => {
-				handleRunQuery();
-			},
-		);
+		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+			handleRunQuery();
+		});
 
 		// Focus the editor
 		editor.focus();

@@ -1,9 +1,17 @@
-import { AlertCircle, CheckCircle, ChevronDown, ChevronRight, Clock, Database, Hash } from "lucide-react";
+import {
+	AlertCircle,
+	CheckCircle,
+	ChevronDown,
+	ChevronRight,
+	Clock,
+	Database,
+	Hash,
+} from "lucide-react";
 import type React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "./ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import {
 	Table,
 	TableBody,
@@ -28,8 +36,8 @@ interface QueryResultsProps {
 	currentQuery?: string;
 }
 
-const QueryResultItem: React.FC<{ 
-	result: QueryResult; 
+const QueryResultItem: React.FC<{
+	result: QueryResult;
 	index: number;
 	isLatest: boolean;
 }> = ({ result, index, isLatest }) => {
@@ -71,8 +79,10 @@ const QueryResultItem: React.FC<{
 	};
 
 	return (
-		<div className={`border rounded-lg ${isLatest ? 'border-blue-300 bg-blue-50/50' : 'border-border'} mb-3`}>
-			<div 
+		<div
+			className={`border rounded-lg ${isLatest ? "border-blue-300 bg-blue-50/50" : "border-border"} mb-3`}
+		>
+			<div
 				className="flex items-start gap-3 p-4 cursor-pointer hover:bg-muted/50 transition-colors"
 				onClick={() => setIsExpanded(!isExpanded)}
 			>
@@ -135,7 +145,9 @@ const QueryResultItem: React.FC<{
 
 						{result.error ? (
 							<div className="bg-red-50 border border-red-200 rounded p-3">
-								<p className="text-sm text-red-700 font-medium mb-1">Query Error:</p>
+								<p className="text-sm text-red-700 font-medium mb-1">
+									Query Error:
+								</p>
 								<p className="text-sm text-red-600 font-mono whitespace-pre-wrap">
 									{result.error}
 								</p>
@@ -156,7 +168,10 @@ const QueryResultItem: React.FC<{
 										{result.results.map((row, rowIndex) => (
 											<TableRow key={rowIndex} className="hover:bg-muted/50">
 												{Object.values(row).map((value, cellIndex) => (
-													<TableCell key={cellIndex} className="font-mono text-sm">
+													<TableCell
+														key={cellIndex}
+														className="font-mono text-sm"
+													>
 														{value === null ? (
 															<span className="text-muted-foreground italic">
 																NULL
@@ -199,7 +214,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 			if (scrollContainerRef.current) {
 				scrollContainerRef.current.scrollTo({
 					top: 0,
-					behavior: 'smooth'
+					behavior: "smooth",
 				});
 			}
 		}
@@ -220,7 +235,8 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 						)}
 						{queryHistory.length > 0 && (
 							<Badge variant="outline">
-								{queryHistory.length} {queryHistory.length === 1 ? 'query' : 'queries'}
+								{queryHistory.length}{" "}
+								{queryHistory.length === 1 ? "query" : "queries"}
 							</Badge>
 						)}
 					</div>
@@ -232,7 +248,9 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 						<div className="flex items-center gap-3">
 							<Clock className="w-5 h-5 text-blue-500 animate-spin" />
 							<div className="flex-1">
-								<p className="text-sm font-medium text-blue-700">Executing query...</p>
+								<p className="text-sm font-medium text-blue-700">
+									Executing query...
+								</p>
 								<p className="text-xs text-blue-600 font-mono mt-1">
 									{currentQuery.replace(/\s+/g, " ").trim().substring(0, 100)}
 									{currentQuery.length > 100 && "..."}

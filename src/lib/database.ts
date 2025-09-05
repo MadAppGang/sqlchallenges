@@ -159,9 +159,7 @@ export function getDatabase(): PGlite | null {
 /**
  * Execute a SQL query and return results
  */
-export async function executeQuery(
-	sql: string,
-): Promise<{
+export async function executeQuery(sql: string): Promise<{
 	results: Record<string, string | number | null>[];
 	error?: string;
 	executionTime: number;

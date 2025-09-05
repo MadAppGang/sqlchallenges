@@ -133,7 +133,7 @@ async function loadPGLite() {
 
 	try {
 		// Dynamic import to bypass Vite's optimization
-		// @ts-ignore - Dynamic import for Vite compatibility
+		// @ts-expect-error - Dynamic import for Vite compatibility
 		const module = await import(/* @vite-ignore */ "@electric-sql/pglite");
 		PGLiteClass = module.PGlite;
 		return PGLiteClass;
@@ -153,7 +153,7 @@ export async function initializeDatabase(): Promise<PGLiteType> {
 
 	try {
 		const PGLite = await loadPGLite();
-		
+
 		console.log("Creating PGlite instance...");
 		// Create a new PGlite instance
 		db = new PGLite();
@@ -182,9 +182,7 @@ export function getDatabase(): PGLiteType | null {
 /**
  * Execute a SQL query and return results
  */
-export async function executeQuery(
-	sql: string,
-): Promise<{
+export async function executeQuery(sql: string): Promise<{
 	results: Record<string, string | number | null>[];
 	error?: string;
 	executionTime: number;

@@ -67,7 +67,7 @@ export default function App() {
 
 		try {
 			const { results, error, executionTime } = await executeQuery(query);
-			
+
 			// Create a new query result entry
 			const newResult: QueryResult = {
 				id: `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -79,21 +79,22 @@ export default function App() {
 			};
 
 			// Add to history
-			setQueryHistory(prev => [...prev, newResult]);
+			setQueryHistory((prev) => [...prev, newResult]);
 		} catch (error) {
 			console.error("Query execution failed:", error);
-			
+
 			// Create an error result entry
 			const errorResult: QueryResult = {
 				id: `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 				query: query,
 				results: [],
-				error: error instanceof Error ? error.message : "An unknown error occurred",
+				error:
+					error instanceof Error ? error.message : "An unknown error occurred",
 				executionTime: undefined,
 				timestamp: new Date(),
 			};
 
-			setQueryHistory(prev => [...prev, errorResult]);
+			setQueryHistory((prev) => [...prev, errorResult]);
 		} finally {
 			setIsLoading(false);
 		}
@@ -110,7 +111,9 @@ export default function App() {
 		return (
 			<div className="h-screen flex items-center justify-center">
 				<div className="text-center">
-					<h2 className="text-xl font-semibold text-red-600 mb-2">Database Error</h2>
+					<h2 className="text-xl font-semibold text-red-600 mb-2">
+						Database Error
+					</h2>
 					<p className="text-gray-600">{dbError}</p>
 				</div>
 			</div>
@@ -122,7 +125,9 @@ export default function App() {
 			<div className="h-screen flex items-center justify-center">
 				<div className="text-center">
 					<h2 className="text-xl font-semibold mb-2">Loading Database...</h2>
-					<p className="text-gray-600">Initializing PostgreSQL in your browser</p>
+					<p className="text-gray-600">
+						Initializing PostgreSQL in your browser
+					</p>
 				</div>
 			</div>
 		);

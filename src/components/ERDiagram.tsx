@@ -3,26 +3,26 @@ import {
 	ConnectionMode,
 	Controls,
 	type Edge,
+	Handle,
 	type Node,
 	Panel,
-	ReactFlow,
-	Handle,
 	Position,
+	ReactFlow,
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
 import type React from "react";
-import { useCallback, useMemo, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import {
-	Database,
-	Key,
-	Link2,
-	Hash,
-	Diamond,
 	Circle,
 	CircleDot,
+	Database,
+	Diamond,
+	Hash,
+	Key,
+	Link2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
@@ -52,7 +52,10 @@ interface ERDiagramProps {
 const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	const { table } = data;
 
-	const detectColumnAttributes = (column: TableSchema["columns"][0], tableName: string) => {
+	const detectColumnAttributes = (
+		column: TableSchema["columns"][0],
+		tableName: string,
+	) => {
 		const isPrimaryKey =
 			column.primaryKey ||
 			column.name.toLowerCase() === "id" ||
@@ -63,12 +66,12 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 		// But category_id in products table is a FK
 		const columnBaseName = column.name.replace(/_id$/, "");
 		const tableBaseName = tableName.replace(/s$/, ""); // Remove plural 's'
-		
+
 		const isForeignKey =
 			column.foreignKey ||
-			(column.name.endsWith("_id") && 
-			 !isPrimaryKey && 
-			 columnBaseName !== tableBaseName) ||
+			(column.name.endsWith("_id") &&
+				!isPrimaryKey &&
+				columnBaseName !== tableBaseName) ||
 			column.description?.toLowerCase().includes("foreign key");
 
 		const isUnique =
@@ -83,42 +86,50 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	};
 
 	return (
-		<div className="relative" style={{ width: '260px', zIndex: 1000 }}>
+		<div className="relative" style={{ width: "260px", zIndex: 1000 }}>
 			{/* Connection handles for React Flow */}
 			<Handle
 				type="target"
 				position={Position.Left}
 				id="left"
-				style={{ background: '#6366f1', width: '10px', height: '10px' }}
+				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
 			<Handle
 				type="source"
 				position={Position.Right}
 				id="right"
-				style={{ background: '#6366f1', width: '10px', height: '10px' }}
+				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
 			<Handle
 				type="target"
 				position={Position.Top}
 				id="top"
-				style={{ background: '#6366f1', width: '10px', height: '10px' }}
+				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
 			<Handle
 				type="source"
 				position={Position.Bottom}
 				id="bottom"
-				style={{ background: '#6366f1', width: '10px', height: '10px' }}
+				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
-			
-			<div className="border border-gray-400 rounded-md shadow-md overflow-hidden" style={{ backgroundColor: '#ffffff' }}>
+
+			<div
+				className="border border-gray-400 rounded-md shadow-md overflow-hidden"
+				style={{ backgroundColor: "#ffffff" }}
+			>
 				{/* Table Header - Black background */}
-				<div className="px-4 py-3 flex items-center gap-2" style={{ backgroundColor: '#000000', color: '#ffffff' }}>
-					<Database className="w-4 h-4" style={{ color: '#9CA3AF' }} />
-					<span className="font-medium text-sm" style={{ color: '#ffffff' }}>{table.tableName}</span>
+				<div
+					className="px-4 py-3 flex items-center gap-2"
+					style={{ backgroundColor: "#000000", color: "#ffffff" }}
+				>
+					<Database className="w-4 h-4" style={{ color: "#9CA3AF" }} />
+					<span className="font-medium text-sm" style={{ color: "#ffffff" }}>
+						{table.tableName}
+					</span>
 				</div>
 
 				{/* Columns - Solid white background */}
-				<div className="bg-white" style={{ backgroundColor: '#ffffff' }}>
+				<div className="bg-white" style={{ backgroundColor: "#ffffff" }}>
 					{table.columns.map((column, index) => {
 						const { isPrimaryKey, isForeignKey, isUnique, isNullable } =
 							detectColumnAttributes(column, table.tableName);
@@ -143,7 +154,9 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 							>
 								{/* Icons */}
 								<div className="flex items-center gap-0.5">
-									{isPrimaryKey && <Key className="w-3.5 h-3.5 text-gray-600" />}
+									{isPrimaryKey && (
+										<Key className="w-3.5 h-3.5 text-gray-600" />
+									)}
 									{isForeignKey && !isPrimaryKey && (
 										<Link2 className="w-3.5 h-3.5 text-gray-600" />
 									)}
@@ -177,9 +190,12 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 
 const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 	// Memoize nodeTypes to prevent React Flow warnings
-	const nodeTypes = useMemo(() => ({
-		table: TableNode,
-	}), []);
+	const nodeTypes = useMemo(
+		() => ({
+			table: TableNode,
+		}),
+		[],
+	);
 	// Generate nodes and edges from table data
 	const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
 		const nodes: Node[] = [];
@@ -188,7 +204,7 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 		// Create a dagre graph for layout
 		const dagreGraph = new dagre.graphlib.Graph();
 		dagreGraph.setDefaultEdgeLabel(() => ({}));
-		
+
 		// Configure the layout
 		dagreGraph.setGraph({
 			rankdir: "TB", // Top to bottom layout
@@ -202,11 +218,11 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 		// Add nodes to dagre graph with dimensions
 		const nodeWidth = 260;
 		const nodeHeight = 200; // Approximate height for tables
-		
+
 		tables.forEach((table) => {
-			dagreGraph.setNode(table.tableName, { 
-				width: nodeWidth, 
-				height: nodeHeight 
+			dagreGraph.setNode(table.tableName, {
+				width: nodeWidth,
+				height: nodeHeight,
 			});
 		});
 
@@ -232,14 +248,14 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 
 		// Create React Flow nodes from dagre layout
 		const nodePositionsMap = new Map<string, { x: number; y: number }>();
-		
+
 		tables.forEach((table) => {
 			const nodeWithPosition = dagreGraph.node(table.tableName);
 			const position = {
 				x: nodeWithPosition.x - nodeWidth / 2,
 				y: nodeWithPosition.y - nodeHeight / 2,
 			};
-			
+
 			nodes.push({
 				id: table.tableName,
 				type: "table",
@@ -247,11 +263,11 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 				data: { table },
 				draggable: true,
 			});
-			
+
 			// Store actual center position for edge routing
 			nodePositionsMap.set(table.tableName, {
 				x: nodeWithPosition.x,
-				y: nodeWithPosition.y
+				y: nodeWithPosition.y,
 			});
 		});
 
@@ -261,7 +277,7 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 				// Use the foreign key reference from the database query
 				if (column.foreignKey && column.foreignKeyReference) {
 					const referencedTable = column.foreignKeyReference.table;
-					
+
 					// Create edge if referenced table exists in our tables
 					if (tables.some((t) => t.tableName === referencedTable)) {
 						const edgeId = `${table.tableName}-${referencedTable}-${column.name}`;
@@ -271,14 +287,14 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 							// Get positions to determine best handles
 							const sourcePos = nodePositionsMap.get(referencedTable);
 							const targetPos = nodePositionsMap.get(table.tableName);
-							
+
 							let sourceHandle = "bottom";
 							let targetHandle = "top";
-							
+
 							if (sourcePos && targetPos) {
 								const dx = targetPos.x - sourcePos.x;
 								const dy = targetPos.y - sourcePos.y;
-								
+
 								// Choose handles based on relative positions
 								// Dagre usually arranges nodes vertically, so prefer vertical connections
 								if (Math.abs(dx) > Math.abs(dy) * 2) {
@@ -301,7 +317,7 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 									}
 								}
 							}
-							
+
 							const edge = {
 								id: edgeId,
 								source: referencedTable,
@@ -310,8 +326,8 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 								targetHandle,
 								type: "smoothstep",
 								animated: false,
-								style: { 
-									stroke: "#6366f1", 
+								style: {
+									stroke: "#6366f1",
 									strokeWidth: 2,
 								},
 								markerEnd: {
@@ -331,14 +347,14 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 									fillOpacity: 0.9,
 								},
 							};
-							
+
 							edges.push(edge);
 						}
 					}
 				}
 			});
 		});
-		
+
 		return { nodes, edges };
 	}, [tables]);
 
@@ -378,7 +394,7 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 						<Panel
 							position="top-left"
 							className="bg-white border border-gray-300 rounded-lg p-3 text-xs shadow-lg"
-							style={{ margin: '10px', backgroundColor: '#ffffff', zIndex: 5 }}
+							style={{ margin: "10px", backgroundColor: "#ffffff", zIndex: 5 }}
 						>
 							<div className="space-y-1.5">
 								<div className="font-semibold text-gray-800 mb-2">Legend</div>

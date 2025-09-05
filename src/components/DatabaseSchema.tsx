@@ -51,24 +51,27 @@ const DatabaseSchema: React.FC = () => {
 					AND tc.table_schema = 'public'
 				ORDER BY tc.table_name, kcu.column_name
 			`);
-			
+
 			// Build a map of foreign keys
-			const foreignKeyMap: Record<string, Record<string, { table: string; column: string }>> = {};
+			const foreignKeyMap: Record<
+				string,
+				Record<string, { table: string; column: string }>
+			> = {};
 			foreignKeysResult.results.forEach((fk) => {
 				const tableName = fk.table_name as string;
 				const columnName = fk.column_name as string;
 				const foreignTable = fk.foreign_table_name as string;
 				const foreignColumn = fk.foreign_column_name as string;
-				
+
 				if (!foreignKeyMap[tableName]) {
 					foreignKeyMap[tableName] = {};
 				}
 				foreignKeyMap[tableName][columnName] = {
 					table: foreignTable,
-					column: foreignColumn
+					column: foreignColumn,
 				};
 			});
-			
+
 			// Get all table names
 			const tablesResult = await executeQuery(`
 				SELECT table_name 
@@ -142,11 +145,11 @@ const DatabaseSchema: React.FC = () => {
 
 				const columns = columnsResult.results.map((col) => {
 					const columnName = col.column_name as string;
-					
+
 					// Check if this column is a foreign key using our manual map
 					const tableFKs = foreignKeyMap[tableName];
 					const foreignKeyRef = tableFKs?.[columnName];
-					
+
 					return {
 						name: columnName,
 						type: col.data_type as string,

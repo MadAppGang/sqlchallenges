@@ -1,8 +1,8 @@
+import { BookOpen, Clock, Database } from "lucide-react";
 import type React from "react";
+import type { ParsedTask } from "../lib/taskParser";
 import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Clock, BookOpen, Database } from "lucide-react";
-import type { ParsedTask } from "../lib/taskParser";
 
 interface TaskDisplayProps {
 	task: ParsedTask;
@@ -34,7 +34,7 @@ const TaskDisplay: React.FC<TaskDisplayProps> = ({ task }) => {
 								{task.metadata.difficulty}
 							</Badge>
 						</div>
-						
+
 						<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
 							<div className="flex items-center gap-1">
 								<Clock className="w-4 h-4" />
@@ -74,9 +74,11 @@ const TaskDisplay: React.FC<TaskDisplayProps> = ({ task }) => {
 						<CardTitle className="text-lg">Task Description</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div 
+						<div
 							className="prose prose-sm dark:prose-invert max-w-none"
-							dangerouslySetInnerHTML={{ __html: task.htmlContent || task.content }}
+							dangerouslySetInnerHTML={{
+								__html: task.htmlContent || task.content,
+							}}
 						/>
 					</CardContent>
 				</Card>

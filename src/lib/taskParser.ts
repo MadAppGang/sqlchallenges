@@ -1,7 +1,5 @@
 // Hard-coded task content for now - in production, these would be loaded from a CMS or API
-import { task1Content } from "./taskContent";
-import { task2Content } from "./taskContent";
-import { task3Content } from "./taskContent";
+import { task1Content, task2Content, task3Content } from "./taskContent";
 
 export interface TaskMetadata {
 	id: number;
@@ -41,7 +39,7 @@ function parseFrontmatter(content: string): { metadata: any; content: string } {
 
 	for (const line of lines) {
 		const trimmed = line.trim();
-		
+
 		if (trimmed.endsWith(":")) {
 			// New key with array value coming
 			currentKey = trimmed.slice(0, -1);
@@ -56,10 +54,11 @@ function parseFrontmatter(content: string): { metadata: any; content: string } {
 			const value = valueParts.join(": ");
 			metadata[key] = value;
 			inArray = false;
-			
+
 			// Convert difficulty to proper case
 			if (key === "difficulty") {
-				metadata[key] = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() as "Easy" | "Medium" | "Hard";
+				metadata[key] = (value.charAt(0).toUpperCase() +
+					value.slice(1).toLowerCase()) as "Easy" | "Medium" | "Hard";
 			}
 			// Convert id to number
 			if (key === "id") {
@@ -78,38 +77,41 @@ function markdownToHtml(markdown: string): string {
 	let html = markdown;
 
 	// Headers
-	html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-	html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-	html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+	html = html.replace(/^### (.*$)/gim, "<h3>$1</h3>");
+	html = html.replace(/^## (.*$)/gim, "<h2>$1</h2>");
+	html = html.replace(/^# (.*$)/gim, "<h1>$1</h1>");
 
 	// Bold
-	html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+	html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 
 	// Italic
-	html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+	html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
 
 	// Code blocks
-	html = html.replace(/```sql\n([\s\S]*?)```/g, '<pre><code class="language-sql">$1</code></pre>');
-	html = html.replace(/```\n([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+	html = html.replace(
+		/```sql\n([\s\S]*?)```/g,
+		'<pre><code class="language-sql">$1</code></pre>',
+	);
+	html = html.replace(/```\n([\s\S]*?)```/g, "<pre><code>$1</code></pre>");
 
 	// Inline code
-	html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+	html = html.replace(/`(.+?)`/g, "<code>$1</code>");
 
 	// Lists
-	html = html.replace(/^\d+\. (.+)$/gim, '<li>$1</li>');
-	html = html.replace(/^- (.+)$/gim, '<li>$1</li>');
+	html = html.replace(/^\d+\. (.+)$/gim, "<li>$1</li>");
+	html = html.replace(/^- (.+)$/gim, "<li>$1</li>");
 
 	// Wrap consecutive list items
 	html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => `<ul>${match}</ul>`);
 
 	// Paragraphs
-	html = html.replace(/\n\n/g, '</p><p>');
+	html = html.replace(/\n\n/g, "</p><p>");
 	html = `<p>${html}</p>`;
 
 	// Clean up empty paragraphs
-	html = html.replace(/<p><\/p>/g, '');
-	html = html.replace(/<p>(<h[1-6]>)/g, '$1');
-	html = html.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+	html = html.replace(/<p><\/p>/g, "");
+	html = html.replace(/<p>(<h[1-6]>)/g, "$1");
+	html = html.replace(/(<\/h[1-6]>)<\/p>/g, "$1");
 
 	return html;
 }
