@@ -12,8 +12,9 @@ import {
 	useNodesState,
 } from "@xyflow/react";
 import type React from "react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import "@xyflow/react/dist/style.css";
+import dagre from "dagre";
 import {
 	Database,
 	Key,
@@ -174,34 +175,83 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	);
 };
 
-const nodeTypes = {
-	table: TableNode,
-};
-
 const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
+	// Memoize nodeTypes to prevent React Flow warnings
+	const nodeTypes = useMemo(() => ({
+		table: TableNode,
+	}), []);
 	// Generate nodes and edges from table data
 	const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
 		const nodes: Node[] = [];
 		const edges: Edge[] = [];
 
-		// Create nodes for each table with improved positioning
-		const tableCount = tables.length;
-		const cols = Math.min(3, Math.ceil(Math.sqrt(tableCount))); // Max 3 columns for better layout
-		const _rows = Math.ceil(tableCount / cols);
+		// Create a dagre graph for layout
+		const dagreGraph = new dagre.graphlib.Graph();
+		dagreGraph.setDefaultEdgeLabel(() => ({}));
+		
+		// Configure the layout
+		dagreGraph.setGraph({
+			rankdir: "TB", // Top to bottom layout
+			align: "UL",
+			nodesep: 100, // Horizontal spacing between nodes
+			ranksep: 100, // Vertical spacing between ranks
+			marginx: 50,
+			marginy: 50,
+		});
 
-		tables.forEach((table, index) => {
-			const col = index % cols;
-			const row = Math.floor(index / cols);
+		// Add nodes to dagre graph with dimensions
+		const nodeWidth = 260;
+		const nodeHeight = 200; // Approximate height for tables
+		
+		tables.forEach((table) => {
+			dagreGraph.setNode(table.tableName, { 
+				width: nodeWidth, 
+				height: nodeHeight 
+			});
+		});
 
+		// Add edges to dagre graph based on foreign keys
+		const edgeSet = new Set<string>();
+		tables.forEach((table) => {
+			table.columns.forEach((column) => {
+				if (column.foreignKey && column.foreignKeyReference) {
+					const referencedTable = column.foreignKeyReference.table;
+					if (tables.some((t) => t.tableName === referencedTable)) {
+						const edgeKey = `${referencedTable}-${table.tableName}`;
+						if (!edgeSet.has(edgeKey)) {
+							dagreGraph.setEdge(referencedTable, table.tableName);
+							edgeSet.add(edgeKey);
+						}
+					}
+				}
+			});
+		});
+
+		// Calculate the layout
+		dagre.layout(dagreGraph);
+
+		// Create React Flow nodes from dagre layout
+		const nodePositionsMap = new Map<string, { x: number; y: number }>();
+		
+		tables.forEach((table) => {
+			const nodeWithPosition = dagreGraph.node(table.tableName);
+			const position = {
+				x: nodeWithPosition.x - nodeWidth / 2,
+				y: nodeWithPosition.y - nodeHeight / 2,
+			};
+			
 			nodes.push({
 				id: table.tableName,
 				type: "table",
-				position: {
-					x: col * 300 + 50, // Spacing between columns
-					y: row * 320 + 50, // Spacing between rows
-				},
+				position,
 				data: { table },
 				draggable: true,
+			});
+			
+			// Store actual center position for edge routing
+			nodePositionsMap.set(table.tableName, {
+				x: nodeWithPosition.x,
+				y: nodeWithPosition.y
 			});
 		});
 
@@ -218,17 +268,52 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 
 						// Avoid duplicate edges
 						if (!edges.some((edge) => edge.id === edgeId)) {
-							// Determine handle positions based on relative positions
-							// For simplicity, we'll use right/left handles
-							edges.push({
+							// Get positions to determine best handles
+							const sourcePos = nodePositionsMap.get(referencedTable);
+							const targetPos = nodePositionsMap.get(table.tableName);
+							
+							let sourceHandle = "bottom";
+							let targetHandle = "top";
+							
+							if (sourcePos && targetPos) {
+								const dx = targetPos.x - sourcePos.x;
+								const dy = targetPos.y - sourcePos.y;
+								
+								// Choose handles based on relative positions
+								// Dagre usually arranges nodes vertically, so prefer vertical connections
+								if (Math.abs(dx) > Math.abs(dy) * 2) {
+									// Strongly horizontal - use left/right
+									if (dx > 0) {
+										sourceHandle = "right";
+										targetHandle = "left";
+									} else {
+										sourceHandle = "left";
+										targetHandle = "right";
+									}
+								} else {
+									// Vertical or diagonal - use top/bottom
+									if (dy > 0) {
+										sourceHandle = "bottom";
+										targetHandle = "top";
+									} else {
+										sourceHandle = "top";
+										targetHandle = "bottom";
+									}
+								}
+							}
+							
+							const edge = {
 								id: edgeId,
 								source: referencedTable,
-								sourceHandle: "right",
+								sourceHandle,
 								target: table.tableName,
-								targetHandle: "left",
+								targetHandle,
 								type: "smoothstep",
 								animated: false,
-								style: { stroke: "#6366f1", strokeWidth: 2 },
+								style: { 
+									stroke: "#6366f1", 
+									strokeWidth: 2,
+								},
 								markerEnd: {
 									type: "arrowclosed",
 									color: "#6366f1",
@@ -240,11 +325,14 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 									fontSize: "11px",
 									fontWeight: 500,
 									fill: "#6366f1",
-									background: "#ffffff",
-									padding: "2px 4px",
-									borderRadius: "3px",
 								},
-							});
+								labelBgStyle: {
+									fill: "#ffffff",
+									fillOpacity: 0.9,
+								},
+							};
+							
+							edges.push(edge);
 						}
 					}
 				}
