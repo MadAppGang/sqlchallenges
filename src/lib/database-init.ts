@@ -154,17 +154,13 @@ export async function initializeDatabase(): Promise<PGLiteType> {
 	try {
 		const PGLite = await loadPGLite();
 
-		console.log("Creating PGlite instance...");
 		// Create a new PGlite instance
 		db = new PGLite();
 
-		console.log("Initializing database schema...");
 		await db.exec(dbSchema);
 
-		console.log("Seeding database with initial data...");
 		await db.exec(seedData);
 
-		console.log("Database initialized successfully!");
 		return db;
 	} catch (error) {
 		console.error("Failed to initialize database:", error);

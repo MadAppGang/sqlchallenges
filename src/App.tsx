@@ -39,10 +39,8 @@ export default function App() {
 		initializeDatabase()
 			.then(() => {
 				setIsDbReady(true);
-				console.log("Database ready!");
 			})
 			.catch((error) => {
-				console.error("Failed to initialize database:", error);
 				setDbError("Failed to initialize database. Please refresh the page.");
 			});
 	}, []);
@@ -81,8 +79,6 @@ export default function App() {
 			// Add to history
 			setQueryHistory((prev) => [...prev, newResult]);
 		} catch (error) {
-			console.error("Query execution failed:", error);
-
 			// Create an error result entry
 			const errorResult: QueryResult = {
 				id: `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
