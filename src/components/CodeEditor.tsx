@@ -1,9 +1,12 @@
+import Editor, { type Monaco } from "@monaco-editor/react";
 import { Clock, Play, Users } from "lucide-react";
 import type React from "react";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import type { editor } from "monaco-editor";
+import { databaseSchema } from "../lib/databaseSchema";
 
 interface CodeEditorProps {
 	initialQuery?: string;
@@ -22,36 +25,36 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 }) => {
 	const [query, setQuery] = useState(initialQuery);
 	const [lastRun, setLastRun] = useState<Date | null>(null);
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const [theme, setTheme] = useState<"vs-dark" | "light">("vs-dark");
+	const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+	const monacoRef = useRef<Monaco | null>(null);
 
-	const handleQueryChange = (value: string) => {
-		setQuery(value);
-		onQueryChange?.(value);
+	// Detect system theme
+	useEffect(() => {
+		const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		setTheme(isDark ? "vs-dark" : "light");
+
+		const handleThemeChange = (e: MediaQueryListEvent) => {
+			setTheme(e.matches ? "vs-dark" : "light");
+		};
+
+		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+		mediaQuery.addEventListener("change", handleThemeChange);
+
+		return () => {
+			mediaQuery.removeEventListener("change", handleThemeChange);
+		};
+	}, []);
+
+	const handleQueryChange = (value: string | undefined) => {
+		const newValue = value || "";
+		setQuery(newValue);
+		onQueryChange?.(newValue);
 	};
 
 	const handleRunQuery = () => {
 		setLastRun(new Date());
 		onRunQuery?.(query);
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-		if (e.key === "Tab") {
-			e.preventDefault();
-			const textarea = e.currentTarget;
-			const start = textarea.selectionStart;
-			const end = textarea.selectionEnd;
-
-			const newValue = `${query.substring(0, start)}  ${query.substring(end)}`;
-			setQuery(newValue);
-			onQueryChange?.(newValue);
-
-			setTimeout(() => {
-				textarea.selectionStart = textarea.selectionEnd = start + 2;
-			}, 0);
-		} else if (e.ctrlKey && e.key === "Enter") {
-			e.preventDefault();
-			handleRunQuery();
-		}
 	};
 
 	const formatTime = (date: Date) => {
@@ -63,84 +66,159 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 		});
 	};
 
-	// SQL keywords for basic syntax highlighting
-	const sqlKeywords = [
-		"SELECT",
-		"FROM",
-		"WHERE",
-		"JOIN",
-		"INNER",
-		"LEFT",
-		"RIGHT",
-		"OUTER",
-		"ON",
-		"GROUP",
-		"BY",
-		"ORDER",
-		"HAVING",
-		"DISTINCT",
-		"AS",
-		"AND",
-		"OR",
-		"NOT",
-		"IN",
-		"LIKE",
-		"BETWEEN",
-		"IS",
-		"NULL",
-		"COUNT",
-		"SUM",
-		"AVG",
-		"MAX",
-		"MIN",
-		"INSERT",
-		"UPDATE",
-		"DELETE",
-		"CREATE",
-		"ALTER",
-		"DROP",
-		"TABLE",
-		"INDEX",
-	];
+	const handleEditorDidMount = (
+		editor: editor.IStandaloneCodeEditor,
+		monaco: Monaco,
+	) => {
+		editorRef.current = editor;
+		monacoRef.current = monaco;
 
-	const renderSyntaxHighlighting = () => {
-		if (!query) return "";
+		// Register SQL keywords and functions for autocomplete
+		monaco.languages.registerCompletionItemProvider("sql", {
+			provideCompletionItems: (model, position) => {
+				const suggestions = [];
 
-		let highlighted = query;
+				// SQL Keywords
+				const keywords = [
+					"SELECT",
+					"FROM",
+					"WHERE",
+					"JOIN",
+					"INNER JOIN",
+					"LEFT JOIN",
+					"RIGHT JOIN",
+					"FULL OUTER JOIN",
+					"ON",
+					"GROUP BY",
+					"ORDER BY",
+					"HAVING",
+					"DISTINCT",
+					"AS",
+					"AND",
+					"OR",
+					"NOT",
+					"IN",
+					"LIKE",
+					"BETWEEN",
+					"IS",
+					"NULL",
+					"INSERT INTO",
+					"VALUES",
+					"UPDATE",
+					"SET",
+					"DELETE FROM",
+					"CREATE TABLE",
+					"ALTER TABLE",
+					"DROP TABLE",
+					"CREATE INDEX",
+					"DROP INDEX",
+					"UNION",
+					"UNION ALL",
+					"CASE",
+					"WHEN",
+					"THEN",
+					"ELSE",
+					"END",
+					"EXISTS",
+					"LIMIT",
+					"OFFSET",
+				];
 
-		// Highlight SQL keywords
-		sqlKeywords.forEach((keyword) => {
-			const regex = new RegExp(`\\b${keyword}\\b`, "gi");
-			highlighted = highlighted.replace(
-				regex,
-				`<span class="sql-keyword">${keyword.toUpperCase()}</span>`,
-			);
+				keywords.forEach((keyword) => {
+					suggestions.push({
+						label: keyword,
+						kind: monaco.languages.CompletionItemKind.Keyword,
+						insertText: keyword,
+						documentation: `SQL keyword: ${keyword}`,
+					});
+				});
+
+				// SQL Functions
+				const functions = [
+					{ name: "COUNT", signature: "COUNT(column)" },
+					{ name: "SUM", signature: "SUM(column)" },
+					{ name: "AVG", signature: "AVG(column)" },
+					{ name: "MAX", signature: "MAX(column)" },
+					{ name: "MIN", signature: "MIN(column)" },
+					{ name: "ROUND", signature: "ROUND(number, decimals)" },
+					{ name: "CONCAT", signature: "CONCAT(string1, string2, ...)" },
+					{ name: "LENGTH", signature: "LENGTH(string)" },
+					{ name: "UPPER", signature: "UPPER(string)" },
+					{ name: "LOWER", signature: "LOWER(string)" },
+					{ name: "SUBSTRING", signature: "SUBSTRING(string, start, length)" },
+					{ name: "REPLACE", signature: "REPLACE(string, old, new)" },
+					{ name: "TRIM", signature: "TRIM(string)" },
+					{ name: "NOW", signature: "NOW()" },
+					{ name: "DATE", signature: "DATE(expression)" },
+					{ name: "YEAR", signature: "YEAR(date)" },
+					{ name: "MONTH", signature: "MONTH(date)" },
+					{ name: "DAY", signature: "DAY(date)" },
+					{ name: "COALESCE", signature: "COALESCE(value1, value2, ...)" },
+					{ name: "CAST", signature: "CAST(expression AS datatype)" },
+					{ name: "ROW_NUMBER", signature: "ROW_NUMBER() OVER (ORDER BY column)" },
+					{ name: "RANK", signature: "RANK() OVER (ORDER BY column)" },
+					{ name: "DENSE_RANK", signature: "DENSE_RANK() OVER (ORDER BY column)" },
+				];
+
+				functions.forEach((func) => {
+					suggestions.push({
+						label: func.name,
+						kind: monaco.languages.CompletionItemKind.Function,
+						insertText: func.signature,
+						insertTextRules:
+							monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+						documentation: `SQL function: ${func.signature}`,
+					});
+				});
+
+				// Add tables and columns from database schema
+				databaseSchema.forEach((table) => {
+					// Add table name
+					suggestions.push({
+						label: table.tableName,
+						kind: monaco.languages.CompletionItemKind.Class,
+						insertText: table.tableName,
+						documentation: `Table: ${table.tableName}`,
+						detail: `Table with ${table.columns.length} columns`,
+					});
+
+					// Add columns for this table
+					table.columns.forEach((column) => {
+						suggestions.push({
+							label: column.name,
+							kind: monaco.languages.CompletionItemKind.Field,
+							insertText: column.name,
+							documentation: column.description || `Column: ${column.name}`,
+							detail: `${table.tableName}.${column.name} (${column.type})`,
+						});
+
+						// Also add table.column notation
+						suggestions.push({
+							label: `${table.tableName}.${column.name}`,
+							kind: monaco.languages.CompletionItemKind.Field,
+							insertText: `${table.tableName}.${column.name}`,
+							documentation: column.description || `Column: ${column.name}`,
+							detail: `Type: ${column.type}`,
+						});
+					});
+				});
+
+				return { suggestions };
+			},
 		});
 
-		// Highlight strings
-		highlighted = highlighted.replace(
-			/'([^']*)'/g,
-			"<span class=\"sql-string\">'$1'</span>",
-		);
-		highlighted = highlighted.replace(
-			/"([^"]*)"/g,
-			'<span class="sql-string">"$1"</span>',
+		// Add keyboard shortcut for running query
+		editor.addCommand(
+			monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+			() => {
+				handleRunQuery();
+			},
 		);
 
-		// Highlight numbers
-		highlighted = highlighted.replace(
-			/\b\d+\.?\d*\b/g,
-			'<span class="sql-number">$&</span>',
-		);
-
-		// Highlight comments
-		highlighted = highlighted.replace(
-			/--.*$/gm,
-			'<span class="sql-comment">$&</span>',
-		);
-
-		return highlighted;
+		// Focus the editor
+		editor.focus();
 	};
+
 
 	return (
 		<Card className="h-full flex flex-col">
@@ -189,35 +267,42 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
 				</div>
 			</CardHeader>
 			<CardContent className="flex-1 flex flex-col p-0">
-				<div className="flex-1 relative">
-					<style jsx>{`
-            .sql-keyword { color: #0066cc; font-weight: 600; }
-            .sql-string { color: #009900; }
-            .sql-number { color: #cc6600; }
-            .sql-comment { color: #999999; font-style: italic; }
-          `}</style>
-
-					{/* Syntax highlighting background */}
-					<div
-						className="absolute inset-4 pointer-events-none font-mono text-sm whitespace-pre-wrap overflow-hidden text-transparent leading-6"
-						dangerouslySetInnerHTML={{ __html: renderSyntaxHighlighting() }}
-					/>
-
-					{/* Actual textarea */}
-					<textarea
-						ref={textareaRef}
+				<div className="flex-1 min-h-0">
+					<Editor
+						height="100%"
+						defaultLanguage="sql"
+						language="sql"
 						value={query}
-						onChange={(e) => handleQueryChange(e.target.value)}
-						onKeyDown={handleKeyDown}
-						placeholder="-- Enter your SQL query here
--- Press Ctrl+Enter to run
--- Press Tab to indent
-
-SELECT * FROM customers;"
-						className="absolute inset-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)] bg-transparent border-none outline-none resize-none font-mono text-sm text-foreground leading-6"
-						style={{
+						onChange={handleQueryChange}
+						onMount={handleEditorDidMount}
+						theme={theme}
+						options={{
+							minimap: { enabled: false },
+							fontSize: 14,
+							lineNumbers: "on",
+							roundedSelection: false,
+							scrollBeyondLastLine: false,
+							readOnly: false,
+							automaticLayout: true,
+							wordWrap: "on",
+							suggestOnTriggerCharacters: true,
+							quickSuggestions: {
+								other: true,
+								comments: false,
+								strings: false,
+							},
+							autoClosingBrackets: "always",
+							autoClosingQuotes: "always",
+							formatOnType: true,
+							formatOnPaste: true,
+							trimAutoWhitespace: true,
+							padding: { top: 16, bottom: 16 },
 							fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-							caretColor: "currentColor",
+							placeholder: `-- Enter your SQL query here
+-- Press Ctrl+Enter to run
+-- Start typing for autocomplete suggestions
+
+SELECT * FROM customers;`,
 						}}
 					/>
 				</div>
@@ -226,9 +311,7 @@ SELECT * FROM customers;"
 					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">
 						Ctrl+Enter
 					</kbd>{" "}
-					to run query •{" "}
-					<kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Tab</kbd> to
-					indent
+					to run query • Start typing for autocomplete suggestions
 				</div>
 			</CardContent>
 		</Card>
