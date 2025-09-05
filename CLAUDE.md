@@ -51,3 +51,4 @@ npm run build  # Build for production (outputs to /build)
 - Uses extensive Radix UI component library for accessibility
 - Vite config includes specific version aliases for all dependencies
 - Build target: ESNext, outputs to /build directory
+- please use prism to format the files
