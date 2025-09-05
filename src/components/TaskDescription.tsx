@@ -38,18 +38,16 @@ const TaskDescription: React.FC<TaskDescriptionProps> = ({ task }) => {
 	};
 
 	return (
-		<Card className="h-full">
-			<CardHeader className="pb-4">
+		<Card className="h-full flex flex-col overflow-hidden">
+			<CardHeader className="pb-4 flex-shrink-0">
 				<div className="flex items-start justify-between gap-4">
 					<CardTitle className="text-lg leading-tight">{title}</CardTitle>
 					<Badge className={getDifficultyColor(difficulty)}>{difficulty}</Badge>
 				</div>
 			</CardHeader>
-			<CardContent className="space-y-4">
-				<div>
-					<h4 className="font-medium mb-2 text-sm">Task Description</h4>
-					<div className="text-sm leading-relaxed text-muted-foreground">
-						<ReactMarkdown
+			<CardContent className="flex-1 overflow-auto pb-6">
+				<div className="text-sm leading-relaxed text-muted-foreground">
+					<ReactMarkdown
 							remarkPlugins={[remarkGfm]}
 							components={{
 								h1: ({ children }) => <h1 className="text-lg font-semibold mb-2">{children}</h1>,
@@ -96,7 +94,6 @@ const TaskDescription: React.FC<TaskDescriptionProps> = ({ task }) => {
 						>
 							{description}
 						</ReactMarkdown>
-					</div>
 				</div>
 
 				{expectedOutput && (

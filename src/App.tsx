@@ -1,7 +1,7 @@
 import { Share2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import CodeEditor from "./components/CodeEditor";
-import QueryResults from "./components/QueryResults";
+import QueryResults, { type QueryResult } from "./components/QueryResults";
 import TaskAndSchemaView from "./components/TaskAndSchemaView";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
@@ -24,13 +24,9 @@ export default function App() {
 	const [currentChallengeId, setCurrentChallengeId] = useState(1);
 	const [isDbReady, setIsDbReady] = useState(false);
 	const [dbError, setDbError] = useState<string | null>(null);
-	const [queryResults, setQueryResults] = useState<
-		Record<string, string | number | null>[]
-	>([]);
+	const [queryHistory, setQueryHistory] = useState<QueryResult[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [currentQuery, setCurrentQuery] = useState("");
-	const [queryError, setQueryError] = useState<string | undefined>();
-	const [executionTime, setExecutionTime] = useState<number | undefined>();
 
 	// Mock collaboration data
 	const collaborators = [
@@ -57,10 +53,9 @@ export default function App() {
 	const handleChallengeSelect = (challengeId: string) => {
 		const id = parseInt(challengeId, 10);
 		setCurrentChallengeId(id);
-		setQueryResults([]);
+		// Clear query history when switching challenges
+		setQueryHistory([]);
 		setCurrentQuery("");
-		setQueryError(undefined);
-		setExecutionTime(undefined);
 	};
 
 	const handleQueryChange = (query: string) => {
@@ -69,26 +64,36 @@ export default function App() {
 
 	const handleRunQuery = async (query: string) => {
 		setIsLoading(true);
-		setQueryError(undefined);
 
 		try {
 			const { results, error, executionTime } = await executeQuery(query);
 			
-			if (error) {
-				setQueryError(error);
-				setQueryResults([]);
-				setExecutionTime(undefined);
-			} else {
-				setQueryResults(results);
-				setExecutionTime(executionTime);
-			}
+			// Create a new query result entry
+			const newResult: QueryResult = {
+				id: `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+				query: query,
+				results: error ? [] : results,
+				error: error,
+				executionTime: executionTime,
+				timestamp: new Date(),
+			};
+
+			// Add to history
+			setQueryHistory(prev => [...prev, newResult]);
 		} catch (error) {
 			console.error("Query execution failed:", error);
-			setQueryError(
-				error instanceof Error ? error.message : "An unknown error occurred",
-			);
-			setQueryResults([]);
-			setExecutionTime(undefined);
+			
+			// Create an error result entry
+			const errorResult: QueryResult = {
+				id: `query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+				query: query,
+				results: [],
+				error: error instanceof Error ? error.message : "An unknown error occurred",
+				executionTime: undefined,
+				timestamp: new Date(),
+			};
+
+			setQueryHistory(prev => [...prev, errorResult]);
 		} finally {
 			setIsLoading(false);
 		}
@@ -179,23 +184,23 @@ export default function App() {
 			</div>
 
 			{/* Main Content */}
-			<div className="h-[calc(100vh-73px)]">
-				<ResizablePanelGroup direction="horizontal">
+			<div className="h-[calc(100vh-73px)] overflow-hidden">
+				<ResizablePanelGroup direction="horizontal" className="h-full">
 					{/* Left Panel - Task and ER Diagram with Tabs */}
 					<ResizablePanel defaultSize={45} minSize={35} maxSize={55}>
-						<div className="h-full p-4">
+						<div className="h-full p-4 overflow-hidden">
 							<TaskAndSchemaView task={currentTask} />
 						</div>
 					</ResizablePanel>
 
-					<ResizableHandle />
+					<ResizableHandle withHandle />
 
 					{/* Right Panel - Code Editor and Results */}
 					<ResizablePanel defaultSize={55} minSize={40}>
-						<ResizablePanelGroup direction="vertical">
+						<ResizablePanelGroup direction="vertical" className="h-full">
 							{/* SQL Editor */}
-							<ResizablePanel defaultSize={60} minSize={40}>
-								<div className="h-full p-4">
+							<ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
+								<div className="h-full p-4 overflow-hidden">
 									<CodeEditor
 										initialQuery={currentQuery}
 										onQueryChange={handleQueryChange}
@@ -206,16 +211,15 @@ export default function App() {
 								</div>
 							</ResizablePanel>
 
-							<ResizableHandle />
+							<ResizableHandle withHandle />
 
 							{/* Query Results */}
-							<ResizablePanel defaultSize={40} minSize={25}>
-								<div className="h-full p-4">
+							<ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
+								<div className="h-full p-4 overflow-hidden">
 									<QueryResults
-										results={queryResults}
+										queryHistory={queryHistory}
 										isLoading={isLoading}
-										error={queryError}
-										executionTime={executionTime}
+										currentQuery={currentQuery}
 									/>
 								</div>
 							</ResizablePanel>
