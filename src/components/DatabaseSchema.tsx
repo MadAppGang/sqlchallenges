@@ -52,8 +52,6 @@ const DatabaseSchema: React.FC = () => {
 				ORDER BY tc.table_name, kcu.column_name
 			`);
 			
-			console.log("Foreign keys from database:", foreignKeysResult.results);
-			
 			// Build a map of foreign keys
 			const foreignKeyMap: Record<string, Record<string, { table: string; column: string }>> = {};
 			foreignKeysResult.results.forEach((fk) => {

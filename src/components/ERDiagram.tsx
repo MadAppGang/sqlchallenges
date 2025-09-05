@@ -6,6 +6,8 @@ import {
 	type Node,
 	Panel,
 	ReactFlow,
+	Handle,
+	Position,
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
@@ -80,7 +82,33 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	};
 
 	return (
-		<div className="bg-white border border-gray-300 rounded-lg shadow-sm w-72 overflow-hidden">
+		<div className="bg-white border border-gray-300 rounded-lg shadow-sm w-72 overflow-hidden relative">
+			{/* Connection handles for React Flow */}
+			<Handle
+				type="target"
+				position={Position.Left}
+				id="left"
+				style={{ background: '#6366f1' }}
+			/>
+			<Handle
+				type="source"
+				position={Position.Right}
+				id="right"
+				style={{ background: '#6366f1' }}
+			/>
+			<Handle
+				type="target"
+				position={Position.Top}
+				id="top"
+				style={{ background: '#6366f1' }}
+			/>
+			<Handle
+				type="source"
+				position={Position.Bottom}
+				id="bottom"
+				style={{ background: '#6366f1' }}
+			/>
+			
 			{/* Table Header */}
 			<div className="bg-gray-900 text-white px-3 py-2 flex items-center gap-2">
 				<Database className="w-4 h-4" />
@@ -182,7 +210,6 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 				// Use the foreign key reference from the database query
 				if (column.foreignKey && column.foreignKeyReference) {
 					const referencedTable = column.foreignKeyReference.table;
-					console.log(`Creating edge: ${table.tableName}.${column.name} -> ${referencedTable}`);
 					
 					// Create edge if referenced table exists in our tables
 					if (tables.some((t) => t.tableName === referencedTable)) {
@@ -190,10 +217,14 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 
 						// Avoid duplicate edges
 						if (!edges.some((edge) => edge.id === edgeId)) {
+							// Determine handle positions based on relative positions
+							// For simplicity, we'll use right/left handles
 							edges.push({
 								id: edgeId,
 								source: referencedTable,
+								sourceHandle: "right",
 								target: table.tableName,
+								targetHandle: "left",
 								type: "smoothstep",
 								animated: false,
 								style: { stroke: "#6366f1", strokeWidth: 2 },
@@ -219,7 +250,6 @@ const ERDiagram: React.FC<ERDiagramProps> = ({ tables }) => {
 			});
 		});
 		
-		console.log("Total edges created:", edges.length, edges);
 		return { nodes, edges };
 	}, [tables]);
 
