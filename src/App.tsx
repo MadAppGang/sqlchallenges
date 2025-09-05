@@ -1,9 +1,8 @@
 import { Share2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import CodeEditor from "./components/CodeEditor";
-import DatabaseSchema from "./components/DatabaseSchema";
 import QueryResults from "./components/QueryResults";
-import TaskDescription from "./components/TaskDescription";
+import TaskAndSchemaView from "./components/TaskAndSchemaView";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
 import {
@@ -182,25 +181,11 @@ export default function App() {
 			{/* Main Content */}
 			<div className="h-[calc(100vh-73px)]">
 				<ResizablePanelGroup direction="horizontal">
-					{/* Left Panel - Task and Data Structure */}
+					{/* Left Panel - Task and ER Diagram with Tabs */}
 					<ResizablePanel defaultSize={45} minSize={35} maxSize={55}>
-						<ResizablePanelGroup direction="vertical">
-							{/* Task Description */}
-							<ResizablePanel defaultSize={40} minSize={25}>
-								<div className="h-full overflow-auto">
-									<TaskDescription task={currentTask} />
-								</div>
-							</ResizablePanel>
-
-							<ResizableHandle />
-
-							{/* Data Structure */}
-							<ResizablePanel defaultSize={60} minSize={40}>
-								<div className="h-full p-4">
-									<DatabaseSchema />
-								</div>
-							</ResizablePanel>
-						</ResizablePanelGroup>
+						<div className="h-full p-4">
+							<TaskAndSchemaView task={currentTask} />
+						</div>
 					</ResizablePanel>
 
 					<ResizableHandle />

@@ -1,20 +1,16 @@
 import type React from "react";
 import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import type { ParsedTask } from "../lib/taskParser";
 
 interface TaskDescriptionProps {
-	title: string;
-	difficulty: "Easy" | "Medium" | "Hard";
-	description: string;
-	expectedOutput?: string;
+	task: ParsedTask;
 }
 
-const TaskDescription: React.FC<TaskDescriptionProps> = ({
-	title,
-	difficulty,
-	description,
-	expectedOutput,
-}) => {
+const TaskDescription: React.FC<TaskDescriptionProps> = ({ task }) => {
+	const { title, difficulty } = task.metadata;
+	const description = task.content;
+	const expectedOutput = undefined; // Can be extracted from content if needed
 	const getDifficultyColor = (difficulty: string) => {
 		switch (difficulty) {
 			case "Easy":
