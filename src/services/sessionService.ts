@@ -8,6 +8,7 @@ import {
 	serverTimestamp,
 	DataSnapshot,
 	off,
+	remove,
 } from "firebase/database";
 import { realtimeDb } from "@/lib/firebase";
 import type {
@@ -147,13 +148,33 @@ class SessionService {
 		callback: (session: CollaborationSession | null) => void,
 	): () => void {
 		const sessionRef = ref(realtimeDb, `${SESSIONS_PATH}/${sessionId}`);
-
+		
+		// Main session listener
 		const unsubscribe = onValue(sessionRef, (snapshot: DataSnapshot) => {
 			const data = snapshot.val();
-			callback(data);
+			
+			if (data) {
+				// Force React to detect changes by creating completely new objects
+				const processedData: CollaborationSession = {
+					...data,
+					editor: {
+						content: data.editor?.content || "",
+						cursorPositions: { ...(data.editor?.cursorPositions || {}) },
+						selections: { ...(data.editor?.selections || {}) }
+					},
+					_lastUpdate: Date.now()
+				} as CollaborationSession;
+				
+				callback(processedData);
+			} else {
+				callback(null);
+			}
 		});
 
-		const cleanup = () => off(sessionRef, "value", unsubscribe);
+		const cleanup = () => {
+			off(sessionRef, "value", unsubscribe);
+		};
+		
 		this.listeners.push(cleanup);
 		return cleanup;
 	}
@@ -174,11 +195,35 @@ class SessionService {
 	) {
 		if (!sessionId || !userId) return;
 
-		const cursorRef = ref(
-			realtimeDb,
-			`${SESSIONS_PATH}/${sessionId}/editor/cursorPositions/${userId}`,
-		);
-		await set(cursorRef, { line, column });
+		try {
+			// Method 1: Update the entire cursorPositions object
+			const cursorPositionsRef = ref(
+				realtimeDb,
+				`${SESSIONS_PATH}/${sessionId}/editor/cursorPositions`,
+			);
+			
+			// Get current cursor positions
+			const snapshot = await new Promise<any>((resolve) => {
+				onValue(cursorPositionsRef, (snap) => resolve(snap.val()), { onlyOnce: true });
+			});
+			
+			const currentPositions = snapshot || {};
+			currentPositions[userId] = { 
+				line, 
+				column,
+				timestamp: Date.now()
+			};
+			
+			// Set the entire object
+			await set(cursorPositionsRef, currentPositions);
+			
+			// Method 2: Also update a timestamp at the session level
+			const timestampRef = ref(realtimeDb, `${SESSIONS_PATH}/${sessionId}/lastActivity`);
+			await set(timestampRef, Date.now());
+			
+		} catch (error) {
+			// Silently handle errors
+		}
 	}
 
 	async updateSelection(
@@ -198,9 +243,15 @@ class SessionService {
 		
 		// If selection is empty (cursor position), remove the selection
 		if (startLine === endLine && startColumn === endColumn) {
-			await set(selectionRef, null);
+			await remove(selectionRef);
 		} else {
-			await set(selectionRef, { startLine, startColumn, endLine, endColumn });
+			await set(selectionRef, { 
+				startLine, 
+				startColumn, 
+				endLine, 
+				endColumn,
+				timestamp: Date.now() // Add timestamp to force change detection
+			});
 		}
 	}
 

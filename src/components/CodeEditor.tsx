@@ -51,22 +51,47 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 		onChange(value || "");
 	};
 
-	// Track cursor and selection changes - now handled in handleEditorDidMount
-	// Keeping this effect empty but present for potential future use
+	// Set up cursor and selection listeners with proper dependency tracking
 	useEffect(() => {
-		// Listeners are now set up in handleEditorDidMount to ensure editor is ready
+		if (!editorRef.current || !onCursorChange) return;
+		
+		const editor = editorRef.current;
+		const disposable = editor.onDidChangeCursorPosition((e) => {
+			const position = e.position;
+			onCursorChange(position.lineNumber, position.column);
+		});
+		
 		return () => {
-			// Cleanup if needed in future
+			disposable.dispose();
 		};
-	}, [onCursorChange, onSelectionChange]);
+	}, [onCursorChange]);
+	
+	useEffect(() => {
+		if (!editorRef.current || !onSelectionChange) return;
+		
+		const editor = editorRef.current;
+		const disposable = editor.onDidChangeCursorSelection((e) => {
+			const selection = e.selection;
+			onSelectionChange(
+				selection.startLineNumber,
+				selection.startColumn,
+				selection.endLineNumber,
+				selection.endColumn
+			);
+		});
+		
+		return () => {
+			disposable.dispose();
+		};
+	}, [onSelectionChange]);
 
 	// Render other users' cursors
 	useEffect(() => {
+		
 		if (!editorRef.current || !monacoRef.current || !isCollaborating) return;
 
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
-		
 
 		// Clear previous decorations
 		if (cursorDecorationsRef.current.length > 0) {
@@ -310,26 +335,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	) => {
 		editorRef.current = editor;
 		monacoRef.current = monaco;
-
-		// Set up cursor and selection listeners here where we know the editor is ready
-		if (onCursorChange) {
-			editor.onDidChangeCursorPosition((e) => {
-				const position = e.position;
-				onCursorChange(position.lineNumber, position.column);
-			});
-		}
-
-		if (onSelectionChange) {
-			editor.onDidChangeCursorSelection((e) => {
-				const selection = e.selection;
-				onSelectionChange(
-					selection.startLineNumber,
-					selection.startColumn,
-					selection.endLineNumber,
-					selection.endColumn
-				);
-			});
-		}
 
 		// Configure SQL language features
 		monaco.languages.registerCompletionItemProvider("sql", {

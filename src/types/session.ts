@@ -26,6 +26,7 @@ export interface EditorState {
 export interface CursorPosition {
 	line: number;
 	column: number;
+	timestamp?: number; // Optional to maintain compatibility
 }
 
 export interface SelectionRange {

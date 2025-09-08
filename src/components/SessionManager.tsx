@@ -1,7 +1,7 @@
 import React, { useState, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Users, Copy, Check, Link2, LogOut, User } from "lucide-react";
@@ -184,6 +184,9 @@ export function SessionManager({
 					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Session Created!</DialogTitle>
+							<DialogDescription>
+								Your collaboration session is ready. Share the link below with others.
+							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 pt-4">
 							<div className="space-y-2">
@@ -305,6 +308,9 @@ export function SessionManager({
 						<DialogContent>
 							<DialogHeader>
 								<DialogTitle>Create Collaboration Session</DialogTitle>
+								<DialogDescription>
+									Start a new collaboration session to work with others in real-time.
+								</DialogDescription>
 							</DialogHeader>
 							<div className="space-y-4 pt-4">
 								<div className="space-y-2">
@@ -340,6 +346,9 @@ export function SessionManager({
 						<DialogContent>
 							<DialogHeader>
 								<DialogTitle>Join Collaboration Session</DialogTitle>
+								<DialogDescription>
+									Enter a session ID to join an existing collaboration session.
+								</DialogDescription>
 							</DialogHeader>
 							<div className="space-y-4 pt-4">
 								<div className="space-y-2">

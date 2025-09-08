@@ -37,10 +37,6 @@ export function TaskPage() {
 	const [isExecuting, setIsExecuting] = useState(false);
 	const [isRemoteUpdate, setIsRemoteUpdate] = useState(false);
 	const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
-	
-	// Use refs to always get current values in callbacks
-	const isConnectedRef = useRef(false);
-	const isRemoteUpdateRef = useRef(false);
 
 	const {
 		session,
@@ -73,14 +69,6 @@ export function TaskPage() {
 		}
 	}, [sessionIdFromUrl, isConnected, pendingSessionId]);
 
-	// Keep refs updated
-	useEffect(() => {
-		isConnectedRef.current = isConnected;
-	}, [isConnected]);
-	
-	useEffect(() => {
-		isRemoteUpdateRef.current = isRemoteUpdate;
-	}, [isRemoteUpdate]);
 
 	useEffect(() => {
 		if (
@@ -143,23 +131,21 @@ export function TaskPage() {
 	const handleCursorChange = useCallback(
 		(line: number, column: number) => {
 			// Don't update cursor position if this is a remote update
-			// Use ref to get current value
-			if (isConnectedRef.current && !isRemoteUpdateRef.current) {
+			if (isConnected && !isRemoteUpdate) {
 				updateCursorPosition(line, column);
 			}
 		},
-		[updateCursorPosition],
+		[updateCursorPosition, isConnected, isRemoteUpdate],
 	);
 
 	const handleSelectionChange = useCallback(
 		(startLine: number, startColumn: number, endLine: number, endColumn: number) => {
 			// Don't update selection if this is a remote update
-			// Use ref to get current value
-			if (isConnectedRef.current && !isRemoteUpdateRef.current) {
+			if (isConnected && !isRemoteUpdate) {
 				updateSelection(startLine, startColumn, endLine, endColumn);
 			}
 		},
-		[updateSelection],
+		[updateSelection, isConnected, isRemoteUpdate],
 	);
 
 	const handleRunQuery = async () => {

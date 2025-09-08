@@ -12,7 +12,7 @@ interface TaskAndSchemaViewProps {
 const TaskAndSchemaView: React.FC<TaskAndSchemaViewProps> = ({ task }) => {
   return (
     <Tabs defaultValue="task" className="h-full flex flex-col">
-      <dic className="px-4 pt-4">
+      <div className="px-4 pt-4">
         <TabsList className="w-full flex h-10 px">
           <TabsTrigger
             value="task"
@@ -29,7 +29,7 @@ const TaskAndSchemaView: React.FC<TaskAndSchemaViewProps> = ({ task }) => {
             <span>ER Diagram</span>
           </TabsTrigger>
         </TabsList>
-      </dic>
+      </div>
       <TabsContent value="task" className="flex-1 overflow-auto mt-4">
         <TaskDescription task={task} />
       </TabsContent>

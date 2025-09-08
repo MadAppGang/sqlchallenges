@@ -38,7 +38,8 @@ export function useCollaborationSession() {
 				setIsConnected(true);
 
 				const unsubscribe = sessionService.subscribeToSession(newSessionId, (sessionData) => {
-					setSession(sessionData);
+					// Force a new object to ensure React detects changes
+					setSession(sessionData ? { ...sessionData } : null);
 				});
 
 				return newSessionId;
@@ -54,7 +55,9 @@ export function useCollaborationSession() {
 
 	const joinSession = useCallback(
 		async (sessionIdToJoin: string) => {
-			if (!user) return false;
+			if (!user) {
+				return false;
+			}
 
 			setIsLoading(true);
 			setError(null);
@@ -68,7 +71,8 @@ export function useCollaborationSession() {
 					const unsubscribe = sessionService.subscribeToSession(
 						sessionIdToJoin,
 						(sessionData) => {
-							setSession(sessionData);
+							// Force a new object to ensure React detects changes
+							setSession(sessionData ? { ...sessionData } : null);
 						},
 					);
 
