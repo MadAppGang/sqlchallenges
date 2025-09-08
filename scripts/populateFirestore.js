@@ -1,15 +1,15 @@
 // Run this script with: node scripts/populateFirestore.js
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { initializeApp } from "firebase/app";
+import { addDoc, collection, getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC2k3Gaujp680hFD5nM2OzNlWnpt2DhHYc",
-  authDomain: "sqlinterview-437f9.firebaseapp.com",
-  projectId: "sqlinterview-437f9",
-  storageBucket: "sqlinterview-437f9.firebasestorage.app",
-  messagingSenderId: "737374943681",
-  appId: "1:737374943681:web:e1150ef738c75b09e7d740",
-  measurementId: "G-KRRJ33NNQS"
+	apiKey: "AIzaSyC2k3Gaujp680hFD5nM2OzNlWnpt2DhHYc",
+	authDomain: "sqlinterview-437f9.firebaseapp.com",
+	projectId: "sqlinterview-437f9",
+	storageBucket: "sqlinterview-437f9.firebasestorage.app",
+	messagingSenderId: "737374943681",
+	appId: "1:737374943681:web:e1150ef738c75b09e7d740",
+	measurementId: "G-KRRJ33NNQS",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -129,12 +129,12 @@ INSERT INTO order_items VALUES
 (17, 12, 9, 2, 39.99);`;
 
 const tasks = [
-  {
-    title: "Basic Product Query",
-    difficulty: "Easy",
-    category: "Basic SQL",
-    timeEstimate: "5-10 minutes",
-    description: `# Task 1: Basic Product Query
+	{
+		title: "Basic Product Query",
+		difficulty: "Easy",
+		category: "Basic SQL",
+		timeEstimate: "5-10 minutes",
+		description: `# Task 1: Basic Product Query
 
 ## Problem Statement
 
@@ -162,42 +162,42 @@ All columns from the products table:
 - Use the WHERE clause to filter results
 - Use AND to combine multiple conditions
 - Use ORDER BY to sort the results`,
-    requirements: [
-      "Select products with price > $100",
-      "Only include products with stock_quantity > 0",
-      "Sort by price descending",
-    ],
-    expectedColumns: [
-      "product_id",
-      "product_name",
-      "category_id",
-      "price",
-      "stock_quantity",
-      "created_at",
-    ],
-    sampleOutput: `product_id | product_name        | category_id | price   | stock_quantity | created_at
+		requirements: [
+			"Select products with price > $100",
+			"Only include products with stock_quantity > 0",
+			"Sort by price descending",
+		],
+		expectedColumns: [
+			"product_id",
+			"product_name",
+			"category_id",
+			"price",
+			"stock_quantity",
+			"created_at",
+		],
+		sampleOutput: `product_id | product_name        | category_id | price   | stock_quantity | created_at
 -----------|-------------------|-------------|---------|----------------|------------
 2          | Laptop Ultra       | 1           | 1299.99 | 25             | 2024-01-20
 1          | Smartphone Pro     | 1           | 899.99  | 50             | 2024-01-15
 3          | Wireless Headphones| 1           | 199.99  | 100            | 2024-02-01`,
-    hints: [
-      "Use WHERE clause with AND operator",
-      "Remember to use ORDER BY DESC for descending order",
-    ],
-    tables: ["products"],
-    skills: ["SELECT", "WHERE", "AND", "ORDER BY"],
-    isPublic: true,
-    dbSchema,
-    seedData,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    title: "Top Customers by Purchase Amount",
-    difficulty: "Medium",
-    category: "Aggregation & Analysis",
-    timeEstimate: "15-20 minutes",
-    description: `# Task 2: Top Customers Analysis
+		hints: [
+			"Use WHERE clause with AND operator",
+			"Remember to use ORDER BY DESC for descending order",
+		],
+		tables: ["products"],
+		skills: ["SELECT", "WHERE", "AND", "ORDER BY"],
+		isPublic: true,
+		dbSchema,
+		seedData,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	},
+	{
+		title: "Top Customers by Purchase Amount",
+		difficulty: "Medium",
+		category: "Aggregation & Analysis",
+		timeEstimate: "15-20 minutes",
+		description: `# Task 2: Top Customers Analysis
 
 ## Problem Statement
 
@@ -226,34 +226,40 @@ Given tables \`customers\`, \`orders\`, \`order_items\`, and \`products\`, write
 - Consider whether you need to JOIN all tables or if some are unnecessary
 - Use LIMIT 3 to get only top 3 results
 - The total_amount column in orders table might simplify your query`,
-    requirements: [
-      "Calculate total purchase amount per customer",
-      "Count orders per customer",
-      "Filter customers with >= 2 orders",
-      "Return top 3 by total amount",
-      "Sort descending by total spent",
-    ],
-    expectedColumns: [
-      "customer_id",
-      "customer_name",
-      "email",
-      "order_count",
-      "total_spent",
-    ],
-    tables: ["customers", "orders", "order_items", "products"],
-    skills: ["GROUP BY", "HAVING", "Aggregate functions", "Multiple JOINs", "LIMIT"],
-    isPublic: true,
-    dbSchema,
-    seedData,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    title: "Inventory Management Report",
-    difficulty: "Hard",
-    category: "Advanced Analytics",
-    timeEstimate: "20-30 minutes",
-    description: `# Task 3: Comprehensive Inventory Management Report
+		requirements: [
+			"Calculate total purchase amount per customer",
+			"Count orders per customer",
+			"Filter customers with >= 2 orders",
+			"Return top 3 by total amount",
+			"Sort descending by total spent",
+		],
+		expectedColumns: [
+			"customer_id",
+			"customer_name",
+			"email",
+			"order_count",
+			"total_spent",
+		],
+		tables: ["customers", "orders", "order_items", "products"],
+		skills: [
+			"GROUP BY",
+			"HAVING",
+			"Aggregate functions",
+			"Multiple JOINs",
+			"LIMIT",
+		],
+		isPublic: true,
+		dbSchema,
+		seedData,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	},
+	{
+		title: "Inventory Management Report",
+		difficulty: "Hard",
+		category: "Advanced Analytics",
+		timeEstimate: "20-30 minutes",
+		description: `# Task 3: Comprehensive Inventory Management Report
 
 ## Problem Statement
 
@@ -282,54 +288,54 @@ Create an inventory management report that shows product performance metrics. Fo
 - You'll need to use subqueries or window functions
 - Consider using CTEs (Common Table Expressions) for clarity
 - The best-selling product requires finding the MAX within each category group`,
-    requirements: [
-      "Group by product category",
-      "Calculate total revenue per category",
-      "Calculate average price per category",
-      "Count total units sold",
-      "Find best-selling product per category",
-      "Exclude categories with no sales",
-      "Sort by revenue descending",
-    ],
-    expectedColumns: [
-      "category_name",
-      "total_revenue",
-      "avg_price",
-      "units_sold",
-      "best_selling_product",
-    ],
-    tables: ["categories", "products", "order_items", "orders"],
-    skills: [
-      "Complex JOINs",
-      "Subqueries",
-      "Window functions",
-      "CTEs",
-      "Advanced aggregation",
-    ],
-    isPublic: true,
-    dbSchema,
-    seedData,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
+		requirements: [
+			"Group by product category",
+			"Calculate total revenue per category",
+			"Calculate average price per category",
+			"Count total units sold",
+			"Find best-selling product per category",
+			"Exclude categories with no sales",
+			"Sort by revenue descending",
+		],
+		expectedColumns: [
+			"category_name",
+			"total_revenue",
+			"avg_price",
+			"units_sold",
+			"best_selling_product",
+		],
+		tables: ["categories", "products", "order_items", "orders"],
+		skills: [
+			"Complex JOINs",
+			"Subqueries",
+			"Window functions",
+			"CTEs",
+			"Advanced aggregation",
+		],
+		isPublic: true,
+		dbSchema,
+		seedData,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	},
 ];
 
 async function populateFirestore() {
-  console.log('Starting Firestore population...');
-  
-  try {
-    for (const task of tasks) {
-      const docRef = await addDoc(collection(db, 'tasks'), task);
-      console.log(`✅ Added task: "${task.title}" with ID: ${docRef.id}`);
-    }
-    
-    console.log('\n🎉 Successfully populated Firestore with all tasks!');
-    console.log('You can now remove the hardcodedTasks.ts file.');
-    process.exit(0);
-  } catch (error) {
-    console.error('❌ Error populating Firestore:', error);
-    process.exit(1);
-  }
+	console.log("Starting Firestore population...");
+
+	try {
+		for (const task of tasks) {
+			const docRef = await addDoc(collection(db, "tasks"), task);
+			console.log(`✅ Added task: "${task.title}" with ID: ${docRef.id}`);
+		}
+
+		console.log("\n🎉 Successfully populated Firestore with all tasks!");
+		console.log("You can now remove the hardcodedTasks.ts file.");
+		process.exit(0);
+	} catch (error) {
+		console.error("❌ Error populating Firestore:", error);
+		process.exit(1);
+	}
 }
 
 populateFirestore();

@@ -168,11 +168,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			<CardHeader className="pb-3 flex-shrink-0">
 				<div className="flex items-center justify-between">
 					<CardTitle className="text-base">SQL Editor</CardTitle>
-					<Button
-						onClick={handleRunQuery}
-						size="sm"
-						className="gap-2"
-					>
+					<Button onClick={handleRunQuery} size="sm" className="gap-2">
 						<Play className="w-3 h-3" />
 						Run Query
 						<kbd className="ml-1 pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:inline-flex">

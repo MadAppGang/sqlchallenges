@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
-import { taskService } from "@/services/taskService";
-import { initTaskDatabase, executeTaskQuery } from "@/lib/taskDatabase";
-import type { Task } from "@/types/task";
-import { TaskAndSchemaView } from "@/components/TaskAndSchemaView";
 import { CodeEditor } from "@/components/CodeEditor";
 import { QueryResults } from "@/components/QueryResults";
+import { TaskAndSchemaView } from "@/components/TaskAndSchemaView";
+import {
+	ResizableHandle,
+	ResizablePanel,
+	ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { executeTaskQuery, initTaskDatabase } from "@/lib/taskDatabase";
+import { taskService } from "@/services/taskService";
+import type { Task } from "@/types/task";
 
 interface QueryExecution {
 	id: string;
@@ -62,7 +66,7 @@ export function TaskPage() {
 			timestamp: new Date(),
 		};
 
-		setQueryHistory(prev => [newExecution, ...prev]);
+		setQueryHistory((prev) => [newExecution, ...prev]);
 		setIsExecuting(false);
 	};
 
@@ -96,7 +100,11 @@ export function TaskPage() {
 				<ResizablePanel defaultSize={60} minSize={30}>
 					<ResizablePanelGroup direction="vertical">
 						<ResizablePanel defaultSize={50} minSize={30}>
-							<CodeEditor value={query} onChange={setQuery} onRun={handleRunQuery} />
+							<CodeEditor
+								value={query}
+								onChange={setQuery}
+								onRun={handleRunQuery}
+							/>
 						</ResizablePanel>
 						<ResizableHandle withHandle />
 						<ResizablePanel defaultSize={50} minSize={30}>

@@ -1,8 +1,14 @@
+import {
+	AlertCircle,
+	CheckCircle,
+	ChevronDown,
+	ChevronUp,
+	Terminal,
+} from "lucide-react";
 import React, { useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Alert, AlertDescription } from "./ui/alert";
-import { AlertCircle, CheckCircle, Terminal, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface QueryExecution {
 	id: string;
@@ -19,15 +25,17 @@ interface QueryResultsProps {
 
 export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
-	const [collapsedQueries, setCollapsedQueries] = React.useState<Set<string>>(new Set());
+	const [collapsedQueries, setCollapsedQueries] = React.useState<Set<string>>(
+		new Set(),
+	);
 
 	// Auto-scroll to bottom when new query is added
 	useEffect(() => {
 		if (scrollRef.current && queryHistory.length > 0) {
 			// Collapse all previous queries except the first one (which is the latest)
-			const allButFirst = queryHistory.slice(1).map(q => q.id);
+			const allButFirst = queryHistory.slice(1).map((q) => q.id);
 			setCollapsedQueries(new Set(allButFirst));
-			
+
 			setTimeout(() => {
 				if (scrollRef.current) {
 					scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -37,7 +45,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 	}, [queryHistory]);
 
 	const toggleCollapse = (id: string) => {
-		setCollapsedQueries(prev => {
+		setCollapsedQueries((prev) => {
 			const newSet = new Set(prev);
 			if (newSet.has(id)) {
 				newSet.delete(id);
@@ -70,7 +78,8 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 				<div className="flex items-center justify-between">
 					<CardTitle className="text-base">Query Results</CardTitle>
 					<span className="text-xs text-muted-foreground">
-						{queryHistory.length} {queryHistory.length === 1 ? 'query' : 'queries'} executed
+						{queryHistory.length}{" "}
+						{queryHistory.length === 1 ? "query" : "queries"} executed
 					</span>
 				</div>
 			</CardHeader>
@@ -78,18 +87,18 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 				<div className="p-4 space-y-4">
 					{queryHistory.map((execution, index) => {
 						const isCollapsed = collapsedQueries.has(execution.id);
-						const isLatest = index === 0;  // First item is the latest
+						const isLatest = index === 0; // First item is the latest
 						const queryNumber = queryHistory.length - index;
-						
+
 						return (
-							<div 
-								key={execution.id} 
+							<div
+								key={execution.id}
 								className={`border rounded-lg overflow-hidden bg-card ${
-									isLatest ? 'ring-2 ring-primary/30 shadow-sm' : ''
+									isLatest ? "ring-2 ring-primary/30 shadow-sm" : ""
 								}`}
 							>
 								{/* Query Header */}
-								<div 
+								<div
 									className={`px-3 py-2 bg-muted/40 flex items-center justify-between cursor-pointer hover:bg-muted/60 transition-colors`}
 									onClick={() => toggleCollapse(execution.id)}
 								>
@@ -115,11 +124,7 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 										<span className="text-xs text-muted-foreground">
 											{new Date(execution.timestamp).toLocaleTimeString()}
 										</span>
-										<Button
-											variant="ghost"
-											size="sm"
-											className="h-6 w-6 p-0"
-										>
+										<Button variant="ghost" size="sm" className="h-6 w-6 p-0">
 											{isCollapsed ? (
 												<ChevronDown className="w-4 h-4" />
 											) : (
@@ -138,7 +143,9 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 												<div className="p-3">
 													<Alert variant="destructive" className="mb-0">
 														<AlertCircle className="h-4 w-4" />
-														<AlertDescription>{execution.error}</AlertDescription>
+														<AlertDescription>
+															{execution.error}
+														</AlertDescription>
 													</Alert>
 												</div>
 											) : execution.result && execution.result.length > 0 ? (
@@ -157,24 +164,33 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 															</tr>
 														</thead>
 														<tbody className="divide-y divide-border">
-															{execution.result.slice(0, 10).map((row: any, idx: number) => (
-																<tr key={idx} className="hover:bg-muted/20">
-																	{Object.keys(row).map((col) => (
-																		<td key={col} className="px-3 py-1.5">
-																			{row[col] !== null ? String(row[col]) : 
-																				<span className="text-muted-foreground italic">NULL</span>
-																			}
-																		</td>
-																	))}
-																</tr>
-															))}
+															{execution.result
+																.slice(0, 10)
+																.map((row: any, idx: number) => (
+																	<tr key={idx} className="hover:bg-muted/20">
+																		{Object.keys(row).map((col) => (
+																			<td key={col} className="px-3 py-1.5">
+																				{row[col] !== null ? (
+																					String(row[col])
+																				) : (
+																					<span className="text-muted-foreground italic">
+																						NULL
+																					</span>
+																				)}
+																			</td>
+																		))}
+																	</tr>
+																))}
 															{execution.result.length > 10 && (
 																<tr>
-																	<td 
-																		colSpan={Object.keys(execution.result[0]).length}
+																	<td
+																		colSpan={
+																			Object.keys(execution.result[0]).length
+																		}
 																		className="px-3 py-2 text-center text-muted-foreground bg-muted/20"
 																	>
-																		... and {execution.result.length - 10} more rows
+																		... and {execution.result.length - 10} more
+																		rows
 																	</td>
 																</tr>
 															)}
@@ -194,7 +210,9 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 												{execution.result && (
 													<span>{execution.result.length} rows returned</span>
 												)}
-												<span>Execution time: {execution.executionTime.toFixed(2)}ms</span>
+												<span>
+													Execution time: {execution.executionTime.toFixed(2)}ms
+												</span>
 											</div>
 										</div>
 									</>

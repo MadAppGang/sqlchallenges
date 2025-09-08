@@ -1,13 +1,13 @@
 import {
+	addDoc,
 	collection,
+	deleteDoc,
 	doc,
 	getDoc,
 	getDocs,
 	query,
-	where,
-	addDoc,
 	updateDoc,
-	deleteDoc,
+	where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Task } from "@/types/task";
@@ -26,18 +26,20 @@ export const taskService = {
 				id: doc.id,
 				...doc.data(),
 			})) as Task[];
-			
+
 			// Sort in memory to avoid index requirement
 			return tasks.sort((a, b) => {
 				// Handle both Firestore Timestamp and Date objects
-				const dateA = a.createdAt ? 
-					(typeof a.createdAt === 'object' && 'seconds' in a.createdAt ? 
-						a.createdAt.seconds : 
-						new Date(a.createdAt).getTime() / 1000) : 0;
-				const dateB = b.createdAt ? 
-					(typeof b.createdAt === 'object' && 'seconds' in b.createdAt ? 
-						b.createdAt.seconds : 
-						new Date(b.createdAt).getTime() / 1000) : 0;
+				const dateA = a.createdAt
+					? typeof a.createdAt === "object" && "seconds" in a.createdAt
+						? a.createdAt.seconds
+						: new Date(a.createdAt).getTime() / 1000
+					: 0;
+				const dateB = b.createdAt
+					? typeof b.createdAt === "object" && "seconds" in b.createdAt
+						? b.createdAt.seconds
+						: new Date(b.createdAt).getTime() / 1000
+					: 0;
 				return dateB - dateA;
 			});
 		} catch (error) {
@@ -70,7 +72,7 @@ export const taskService = {
 			id: doc.id,
 			...doc.data(),
 		})) as Task[];
-		
+
 		// Sort in memory to avoid index requirement
 		return tasks.sort((a, b) => {
 			const dateA = a.createdAt?.seconds || 0;

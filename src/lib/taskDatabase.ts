@@ -10,7 +10,7 @@ export async function initTaskDatabase(task: Task): Promise<PGlite> {
 	}
 
 	const { PGlite } = await import("@electric-sql/pglite");
-	
+
 	// Create a fresh database instance
 	// Using memory mode for better performance and to avoid persistence issues
 	db = await PGlite.create({
