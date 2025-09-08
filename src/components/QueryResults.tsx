@@ -4,9 +4,11 @@ import {
 	ChevronDown,
 	ChevronUp,
 	Terminal,
+	Users,
 } from "lucide-react";
 import React, { useEffect, useRef } from "react";
 import { Alert, AlertDescription } from "./ui/alert";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
@@ -21,9 +23,13 @@ interface QueryExecution {
 
 interface QueryResultsProps {
 	queryHistory: QueryExecution[];
+	isCollaborating?: boolean;
 }
 
-export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
+export const QueryResults: React.FC<QueryResultsProps> = ({
+	queryHistory,
+	isCollaborating = false,
+}) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const [collapsedQueries, setCollapsedQueries] = React.useState<Set<string>>(
 		new Set(),
@@ -76,7 +82,15 @@ export const QueryResults: React.FC<QueryResultsProps> = ({ queryHistory }) => {
 		<Card className="h-full flex flex-col">
 			<CardHeader className="pb-3 flex-shrink-0 border-b">
 				<div className="flex items-center justify-between">
-					<CardTitle className="text-base">Query Results</CardTitle>
+					<div className="flex items-center gap-2">
+						<CardTitle className="text-base">Query Results</CardTitle>
+						{isCollaborating && (
+							<Badge variant="outline" className="text-xs">
+								<Users className="w-3 h-3 mr-1" />
+								Shared
+							</Badge>
+						)}
+					</div>
 					<span className="text-xs text-muted-foreground">
 						{queryHistory.length}{" "}
 						{queryHistory.length === 1 ? "query" : "queries"} executed

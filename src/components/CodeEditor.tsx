@@ -1,46 +1,246 @@
 import Editor, { type Monaco } from "@monaco-editor/react";
-import { Play } from "lucide-react";
+import { Play, Users } from "lucide-react";
 import type { editor } from "monaco-editor";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Participant, CursorPosition, SelectionRange } from "@/types/session";
 import { databaseSchema } from "../lib/databaseSchema";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import "../styles/editor-cursors.css";
 
 interface CodeEditorProps {
 	value: string;
 	onChange: (value: string) => void;
 	onRun: () => void;
+	isCollaborating?: boolean;
+	participants?: Participant[];
+	cursorPositions?: Record<string, CursorPosition>;
+	selections?: Record<string, SelectionRange>;
+	onCursorChange?: (line: number, column: number) => void;
+	onSelectionChange?: (startLine: number, startColumn: number, endLine: number, endColumn: number) => void;
+	currentUserId?: string;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
 	value,
 	onChange,
 	onRun,
+	isCollaborating = false,
+	participants = [],
+	cursorPositions = {},
+	selections = {},
+	onCursorChange,
+	onSelectionChange,
+	currentUserId,
 }) => {
-	const [theme, setTheme] = useState<"vs-dark" | "light">("vs-dark");
+	console.log('CodeEditor props:', { 
+		hasOnSelectionChange: !!onSelectionChange,
+		hasOnCursorChange: !!onCursorChange,
+		isCollaborating 
+	});
+	const [theme, setTheme] = useState<"vs" | "vs-dark">("vs");
 	const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<Monaco | null>(null);
+	const cursorDecorationsRef = useRef<string[]>([]);
+	const cursorWidgetsRef = useRef<Map<string, any>>(new Map());
+	const selectionDecorationsRef = useRef<string[]>([]);
 
-	// Detect system theme
+	// Always use light theme for consistency
 	useEffect(() => {
-		const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-		setTheme(isDark ? "vs-dark" : "light");
-
-		const handleThemeChange = (e: MediaQueryListEvent) => {
-			setTheme(e.matches ? "vs-dark" : "light");
-		};
-
-		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-		mediaQuery.addEventListener("change", handleThemeChange);
-
-		return () => {
-			mediaQuery.removeEventListener("change", handleThemeChange);
-		};
+		setTheme("vs");
 	}, []);
 
 	const handleQueryChange = (value: string | undefined) => {
 		onChange(value || "");
+	};
+
+	// Track cursor and selection changes - now handled in handleEditorDidMount
+	// Keeping this effect empty but present for potential future use
+	useEffect(() => {
+		// Listeners are now set up in handleEditorDidMount to ensure editor is ready
+		return () => {
+			// Cleanup if needed in future
+		};
+	}, [onCursorChange, onSelectionChange]);
+
+	// Render other users' cursors
+	useEffect(() => {
+		if (!editorRef.current || !monacoRef.current || !isCollaborating) return;
+
+		const editor = editorRef.current;
+		const monaco = monacoRef.current;
+		
+		console.log('Rendering cursors:', { 
+			cursorPositions, 
+			selections,
+			currentUserId,
+			participants 
+		});
+
+		// Clear previous decorations
+		if (cursorDecorationsRef.current.length > 0) {
+			editor.deltaDecorations(cursorDecorationsRef.current, []);
+			cursorDecorationsRef.current = [];
+		}
+
+		// Clear previous widgets
+		cursorWidgetsRef.current.forEach((widget) => {
+			editor.removeContentWidget(widget);
+		});
+		cursorWidgetsRef.current.clear();
+
+		// Add new cursor decorations for each participant
+		const newDecorations: any[] = [];
+
+		Object.entries(cursorPositions || {}).forEach(([userId, position]) => {
+			// Skip current user's cursor - we don't need to show our own cursor
+			if (userId === currentUserId) return;
+
+			const participant = participants.find(p => p.id === userId);
+			if (!participant || !participant.isActive) return;
+
+			// Check if user has an active selection (not just a cursor position)
+			const userSelection = selections?.[userId];
+			const hasSelection = userSelection && 
+				(userSelection.startLine !== userSelection.endLine || 
+				 userSelection.startColumn !== userSelection.endColumn);
+			
+			console.log(`User ${userId} cursor check:`, { 
+				hasSelection, 
+				selection: userSelection,
+				position 
+			});
+
+			// Only skip cursor if user has a multi-character selection
+			if (hasSelection) {
+				console.log(`Skipping cursor for ${userId} due to active selection`);
+				return;
+			}
+
+			// Create cursor widget
+			const cursorWidget = {
+				getId: () => `cursor-${userId}`,
+				getDomNode: () => {
+					const container = document.createElement('div');
+					container.className = 'user-cursor';
+					
+					// Create cursor line
+					const cursorLine = document.createElement('div');
+					cursorLine.className = 'user-cursor-line';
+					cursorLine.style.backgroundColor = participant.color;
+					
+					// Create label
+					const label = document.createElement('div');
+					label.className = 'user-cursor-label';
+					label.style.backgroundColor = participant.color;
+					label.textContent = participant.name;
+					
+					container.appendChild(cursorLine);
+					container.appendChild(label);
+					
+					return container;
+				},
+				getPosition: () => ({
+					position: {
+						lineNumber: position.line,
+						column: position.column,
+					},
+					preference: [monaco.editor.ContentWidgetPositionPreference.EXACT],
+				}),
+			};
+
+			editor.addContentWidget(cursorWidget);
+			cursorWidgetsRef.current.set(userId, cursorWidget);
+		});
+
+		return () => {
+			// Cleanup
+			if (cursorDecorationsRef.current.length > 0) {
+				editor.deltaDecorations(cursorDecorationsRef.current, []);
+				cursorDecorationsRef.current = [];
+			}
+			cursorWidgetsRef.current.forEach((widget) => {
+				editor.removeContentWidget(widget);
+			});
+			cursorWidgetsRef.current.clear();
+		};
+	}, [cursorPositions, participants, currentUserId, isCollaborating, selections]);
+
+	// Render selections
+	useEffect(() => {
+		if (!editorRef.current || !monacoRef.current || !isCollaborating) return;
+
+		const editor = editorRef.current;
+		const monaco = monacoRef.current;
+		
+		console.log('Rendering selections:', selections);
+
+		// Clear previous selection decorations
+		if (selectionDecorationsRef.current.length > 0) {
+			editor.deltaDecorations(selectionDecorationsRef.current, []);
+			selectionDecorationsRef.current = [];
+		}
+
+		// Add new selection decorations
+		const newDecorations: any[] = [];
+
+		Object.entries(selections || {}).forEach(([userId, selection]) => {
+			// Skip current user's selection
+			if (userId === currentUserId) return;
+
+			const participant = participants.find(p => p.id === userId);
+			if (!participant || !participant.isActive) return;
+
+			// Create a semi-transparent version of the user's color
+			const rgbaColor = hexToRgba(participant.color, 0.3);
+
+			newDecorations.push({
+				range: new monaco.Range(
+					selection.startLine,
+					selection.startColumn,
+					selection.endLine,
+					selection.endColumn
+				),
+				options: {
+					className: `user-selection user-selection-${userId}`,
+					stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+					isWholeLine: false,
+					// Inline decoration for background color
+					inlineClassName: `user-selection-inline`,
+					// Add a colored background
+					backgroundColor: rgbaColor,
+					// Add overview ruler marker
+					overviewRuler: {
+						color: participant.color,
+						position: monaco.editor.OverviewRulerLane.Full
+					},
+					// Add minimap marker
+					minimap: {
+						color: participant.color,
+						position: monaco.editor.MinimapPosition.Inline
+					}
+				}
+			});
+		});
+
+		selectionDecorationsRef.current = editor.deltaDecorations([], newDecorations);
+
+		return () => {
+			if (selectionDecorationsRef.current.length > 0) {
+				editor.deltaDecorations(selectionDecorationsRef.current, []);
+				selectionDecorationsRef.current = [];
+			}
+		};
+	}, [selections, participants, currentUserId, isCollaborating]);
+
+	// Helper function to convert hex to rgba
+	const hexToRgba = (hex: string, alpha: number) => {
+		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result
+			? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`
+			: `rgba(128, 128, 128, ${alpha})`;
 	};
 
 	const handleRunQuery = () => {
@@ -69,8 +269,39 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 		editor: editor.IStandaloneCodeEditor,
 		monaco: Monaco,
 	) => {
+		console.log('Editor mounted');
 		editorRef.current = editor;
 		monacoRef.current = monaco;
+
+		// Set up cursor and selection listeners here where we know the editor is ready
+		console.log('Setting up cursor and selection listeners in mount');
+		
+		if (onCursorChange) {
+			editor.onDidChangeCursorPosition((e) => {
+				const position = e.position;
+				console.log('Cursor position changed in mount:', position);
+				onCursorChange(position.lineNumber, position.column);
+			});
+			console.log('Cursor listener added in mount');
+		}
+
+		if (onSelectionChange) {
+			editor.onDidChangeCursorSelection((e) => {
+				const selection = e.selection;
+				console.log('Selection changed in mount:', {
+					start: `${selection.startLineNumber}:${selection.startColumn}`,
+					end: `${selection.endLineNumber}:${selection.endColumn}`,
+					isEmpty: selection.isEmpty()
+				});
+				onSelectionChange(
+					selection.startLineNumber,
+					selection.startColumn,
+					selection.endLineNumber,
+					selection.endColumn
+				);
+			});
+			console.log('Selection listener added in mount');
+		}
 
 		// Configure SQL language features
 		monaco.languages.registerCompletionItemProvider("sql", {
@@ -167,7 +398,15 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 		<Card className="h-full flex flex-col">
 			<CardHeader className="pb-3 flex-shrink-0">
 				<div className="flex items-center justify-between">
-					<CardTitle className="text-base">SQL Editor</CardTitle>
+					<div className="flex items-center gap-2">
+						<CardTitle className="text-base">SQL Editor</CardTitle>
+						{isCollaborating && (
+							<Badge variant="outline" className="text-xs">
+								<Users className="w-3 h-3 mr-1" />
+								{participants.filter((p) => p.isActive).length} editing
+							</Badge>
+						)}
+					</div>
 					<Button onClick={handleRunQuery} size="sm" className="gap-2">
 						<Play className="w-3 h-3" />
 						Run Query
@@ -188,6 +427,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					options={{
 						minimap: { enabled: false },
 						fontSize: 14,
+						fontFamily: "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
 						lineNumbers: "on",
 						scrollBeyondLastLine: false,
 						automaticLayout: true,
@@ -197,7 +437,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 						quickSuggestions: true,
 						formatOnPaste: true,
 						formatOnType: true,
-						padding: { top: 16, bottom: 16 },
+						padding: { top: 30, bottom: 16 },
 						scrollbar: {
 							vertical: "visible",
 							horizontal: "visible",
@@ -205,6 +445,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 							verticalScrollbarSize: 10,
 							horizontalScrollbarSize: 10,
 						},
+						renderWhitespace: "selection",
+						cursorBlinking: "smooth",
 					}}
 				/>
 			</CardContent>

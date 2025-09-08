@@ -1,0 +1,93 @@
+/* Animated user cursors for collaborative editing */
+
+/* Allow overflow for cursor labels */
+.monaco-editor .overflow-guard {
+	overflow: visible !important;
+}
+
+.monaco-editor .monaco-scrollable-element {
+	overflow: visible !important;
+}
+
+.monaco-editor .lines-content {
+	overflow: visible !important;
+}
+
+.monaco-editor .view-lines {
+	overflow: visible !important;
+}
+
+.user-cursor {
+	position: absolute;
+	pointer-events: none;
+	z-index: 1000;
+}
+
+.user-cursor-line {
+	position: absolute;
+	width: 2px;
+	height: 20px;
+	animation: cursorBlink 1s infinite;
+	transition: all 0.1s ease-out;
+}
+
+.user-cursor-label {
+	position: absolute;
+	top: -24px;
+	left: -2px;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 500;
+	white-space: nowrap;
+	color: white;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	animation: fadeIn 0.2s ease-out;
+	font-family: system-ui, -apple-system, sans-serif;
+}
+
+.user-cursor.inactive {
+	opacity: 0.5;
+}
+
+.user-cursor.inactive::before {
+	animation: none;
+}
+
+@keyframes cursorBlink {
+	0%, 50% {
+		opacity: 1;
+	}
+	51%, 100% {
+		opacity: 0;
+	}
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Selection highlighting for other users */
+.user-selection {
+	position: absolute;
+	pointer-events: none;
+	opacity: 0.25;
+	transition: all 0.1s ease-out;
+}
+
+.user-selection-inline {
+	position: absolute;
+	pointer-events: none;
+}
+
+/* Smooth cursor movement */
+.cursor-smooth {
+	transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
