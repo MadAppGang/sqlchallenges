@@ -87,22 +87,22 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 				const suggestions: any[] = [];
 
 				// Add table suggestions
-				for (const table of databaseSchema.tables) {
+				for (const table of databaseSchema) {
 					suggestions.push({
-						label: table.name,
+						label: table.tableName,
 						kind: monaco.languages.CompletionItemKind.Class,
-						documentation: `Table: ${table.name}`,
-						insertText: table.name,
+						documentation: `Table: ${table.tableName}`,
+						insertText: table.tableName,
 						range: range,
 					});
 
 					// Add column suggestions for each table
 					for (const column of table.columns) {
 						suggestions.push({
-							label: `${table.name}.${column.name}`,
+							label: `${table.tableName}.${column.name}`,
 							kind: monaco.languages.CompletionItemKind.Field,
-							documentation: `${column.type}${column.constraints ? ` (${column.constraints})` : ""}`,
-							insertText: `${table.name}.${column.name}`,
+							documentation: `${column.type}${column.description ? ` - ${column.description}` : ""}`,
+							insertText: `${table.tableName}.${column.name}`,
 							range: range,
 						});
 					}

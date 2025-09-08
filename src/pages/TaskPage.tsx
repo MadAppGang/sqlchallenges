@@ -8,14 +8,21 @@ import { TaskAndSchemaView } from "@/components/TaskAndSchemaView";
 import { CodeEditor } from "@/components/CodeEditor";
 import { QueryResults } from "@/components/QueryResults";
 
+interface QueryExecution {
+	id: string;
+	query: string;
+	result: any;
+	error: string | null;
+	executionTime: number;
+	timestamp: Date;
+}
+
 export function TaskPage() {
 	const { taskId } = useParams<{ taskId: string }>();
 	const [task, setTask] = useState<Task | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [query, setQuery] = useState("");
-	const [queryResult, setQueryResult] = useState<any>(null);
-	const [queryError, setQueryError] = useState<string | null>(null);
-	const [executionTime, setExecutionTime] = useState<number>(0);
+	const [queryHistory, setQueryHistory] = useState<QueryExecution[]>([]);
 	const [isExecuting, setIsExecuting] = useState(false);
 
 	useEffect(() => {
@@ -43,13 +50,19 @@ export function TaskPage() {
 		if (!query.trim()) return;
 
 		setIsExecuting(true);
-		setQueryError(null);
 
 		const { result, error, executionTime } = await executeTaskQuery(query);
 
-		setQueryResult(result);
-		setQueryError(error);
-		setExecutionTime(executionTime);
+		const newExecution: QueryExecution = {
+			id: Date.now().toString(),
+			query: query,
+			result: result,
+			error: error,
+			executionTime: executionTime,
+			timestamp: new Date(),
+		};
+
+		setQueryHistory(prev => [newExecution, ...prev]);
 		setIsExecuting(false);
 	};
 
@@ -87,11 +100,7 @@ export function TaskPage() {
 						</ResizablePanel>
 						<ResizableHandle withHandle />
 						<ResizablePanel defaultSize={50} minSize={30}>
-							<QueryResults
-								result={queryResult}
-								error={queryError}
-								executionTime={executionTime}
-							/>
+							<QueryResults queryHistory={queryHistory} />
 						</ResizablePanel>
 					</ResizablePanelGroup>
 				</ResizablePanel>
