@@ -155,18 +155,8 @@ export function TaskPage() {
 
 		const { result, error, executionTime } = await executeTaskQuery(query);
 
-		const newExecution: QueryExecution = {
-			id: Date.now().toString(),
-			query: query,
-			result: result,
-			error: error,
-			executionTime: executionTime,
-			timestamp: new Date(),
-		};
-
-		setQueryHistory((prev) => [newExecution, ...prev]);
-
 		if (isConnected) {
+			// If connected, only update Firebase - we'll get the result back via subscription
 			const queryResultsState: QueryResultsState = {
 				results: result,
 				error: error,
@@ -174,6 +164,17 @@ export function TaskPage() {
 				timestamp: Date.now(),
 			};
 			updateQueryResults(queryResultsState);
+		} else {
+			// If not connected, update local state directly
+			const newExecution: QueryExecution = {
+				id: Date.now().toString(),
+				query: query,
+				result: result,
+				error: error,
+				executionTime: executionTime,
+				timestamp: new Date(),
+			};
+			setQueryHistory((prev) => [newExecution, ...prev]);
 		}
 
 		setIsExecuting(false);
