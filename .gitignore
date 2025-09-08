@@ -3,6 +3,7 @@ node_modules
 dist
 build
 *.log
+.firebase/
 .env
 .env.local
 .env.*.local
