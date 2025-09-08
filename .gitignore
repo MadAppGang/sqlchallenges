@@ -12,4 +12,4 @@ build
 *.swo
 *~
 .cache
-.parcel-cache
+.parcel-cache.env

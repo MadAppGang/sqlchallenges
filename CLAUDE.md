@@ -62,3 +62,4 @@ npm run format # Format code with Biome
 - **Build Output**: Production build outputs to `/build` directory
 - **Code Style**: Biome formatter with tabs, double quotes
 - **No TypeScript Config**: Project works without explicit tsconfig.json
+- we are using pnpm instead of npm, and we are using biome instead of eslint

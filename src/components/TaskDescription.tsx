@@ -1,18 +1,18 @@
 import type React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ParsedTask } from "../lib/taskParser";
+import type { Task } from "@/types/task";
 import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface TaskDescriptionProps {
-	task: ParsedTask;
+	task: Task;
 }
 
 const TaskDescription: React.FC<TaskDescriptionProps> = ({ task }) => {
-	const { title, difficulty } = task.metadata;
+	const { title, difficulty, description } = task;
 	// Process the content to handle tables in code blocks
-	const processedDescription = task.content.replace(
+	const processedDescription = description.replace(
 		/```\n((?:[^\n]*\|[^\n]*\n)+)```/g,
 		(match, tableContent) => {
 			// Check if it looks like a markdown table
@@ -22,8 +22,8 @@ const TaskDescription: React.FC<TaskDescriptionProps> = ({ task }) => {
 			return match;
 		},
 	);
-	const description = processedDescription;
-	const expectedOutput = undefined; // Can be extracted from content if needed
+	const finalDescription = processedDescription;
+	const expectedOutput = task.sampleOutput;
 	const getDifficultyColor = (difficulty: string) => {
 		switch (difficulty) {
 			case "Easy":
@@ -112,7 +112,7 @@ const TaskDescription: React.FC<TaskDescriptionProps> = ({ task }) => {
 							),
 						}}
 					>
-						{description}
+						{finalDescription}
 					</ReactMarkdown>
 				</div>
 

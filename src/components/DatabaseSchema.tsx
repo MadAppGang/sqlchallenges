@@ -1,6 +1,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
-import { executeQuery } from "../lib/database-init";
+import { executeQuery } from "../lib/taskDatabase";
 import ERDiagram from "./ERDiagram";
 
 interface TableSchema {

@@ -1,12 +1,12 @@
 import { Database, FileText } from "lucide-react";
 import type React from "react";
-import type { ParsedTask } from "../lib/taskParser";
+import type { Task } from "@/types/task";
 import DatabaseSchema from "./DatabaseSchema";
 import TaskDescription from "./TaskDescription";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 interface TaskAndSchemaViewProps {
-	task: ParsedTask;
+	task: Task;
 }
 
 const TaskAndSchemaView: React.FC<TaskAndSchemaViewProps> = ({ task }) => {
@@ -38,4 +38,4 @@ const TaskAndSchemaView: React.FC<TaskAndSchemaViewProps> = ({ task }) => {
 	);
 };
 
-export default TaskAndSchemaView;
+export { TaskAndSchemaView };
