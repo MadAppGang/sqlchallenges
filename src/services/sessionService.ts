@@ -70,6 +70,8 @@ class SessionService {
 			},
 			editor: {
 				content: "",
+				cursorPositions: {},
+				selections: {},
 			},
 			queryResults: null,
 			selectedChallenge,
@@ -159,12 +161,8 @@ class SessionService {
 	async updateEditorContent(sessionId: string, content: string) {
 		if (!sessionId) return;
 
-		const editorRef = ref(realtimeDb, `${SESSIONS_PATH}/${sessionId}/editor`);
-		const updates: EditorState = {
-			content,
-		};
-
-		await update(editorRef, updates);
+		const contentRef = ref(realtimeDb, `${SESSIONS_PATH}/${sessionId}/editor/content`);
+		await set(contentRef, content);
 		await this.updateSessionTimestamp(sessionId);
 	}
 

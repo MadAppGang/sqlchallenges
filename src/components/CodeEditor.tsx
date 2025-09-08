@@ -66,6 +66,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
+		
 
 		// Clear previous decorations
 		if (cursorDecorationsRef.current.length > 0) {
@@ -157,6 +158,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
+		
 
 		// Clear previous selection decorations
 		if (selectionDecorationsRef.current.length > 0) {
