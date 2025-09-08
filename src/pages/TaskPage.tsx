@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { CodeEditor } from "@/components/CodeEditor";
 import { QueryResults } from "@/components/QueryResults";
 import { SessionManager } from "@/components/SessionManager";
@@ -28,6 +28,7 @@ export function TaskPage() {
 	const { taskId } = useParams<{ taskId: string }>();
 	const [searchParams] = useSearchParams();
 	const sessionIdFromUrl = searchParams.get("session");
+	const navigate = useNavigate();
 
 	const [task, setTask] = useState<Task | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -141,15 +142,9 @@ export function TaskPage() {
 
 	const handleCursorChange = useCallback(
 		(line: number, column: number) => {
-			console.log('handleCursorChange called:', { 
-				line, column, 
-				isConnected: isConnectedRef.current,
-				isRemoteUpdate: isRemoteUpdateRef.current
-			});
 			// Don't update cursor position if this is a remote update
 			// Use ref to get current value
 			if (isConnectedRef.current && !isRemoteUpdateRef.current) {
-				console.log('Updating cursor position to Firebase');
 				updateCursorPosition(line, column);
 			}
 		},
@@ -158,15 +153,9 @@ export function TaskPage() {
 
 	const handleSelectionChange = useCallback(
 		(startLine: number, startColumn: number, endLine: number, endColumn: number) => {
-			console.log('handleSelectionChange called:', { 
-				startLine, startColumn, endLine, endColumn, 
-				isConnected: isConnectedRef.current, 
-				isRemoteUpdate: isRemoteUpdateRef.current 
-			});
 			// Don't update selection if this is a remote update
 			// Use ref to get current value
 			if (isConnectedRef.current && !isRemoteUpdateRef.current) {
-				console.log('Updating selection to Firebase');
 				updateSelection(startLine, startColumn, endLine, endColumn);
 			}
 		},
@@ -222,35 +211,36 @@ export function TaskPage() {
 
 	return (
 		<div className="h-screen flex flex-col">
-			<div className="border-b px-4 py-2">
+			<div className="border-b px-4 py-2 flex items-center justify-between">
 				<h1 className="text-xl font-semibold">{task.title}</h1>
+				<SessionManager
+					session={session}
+					sessionId={sessionId}
+					user={user}
+					isConnected={isConnected}
+					isLoading={sessionLoading}
+					error={sessionError}
+					selectedChallenge={taskId || "default"}
+					pendingSessionId={pendingSessionId}
+					onCreateSession={createSession}
+					onJoinSession={(sessionId) => {
+						setPendingSessionId(null);
+						return joinSession(sessionId);
+					}}
+					onLeaveSession={async () => {
+						await leaveSession();
+						// Clear pending session ID and remove session from URL
+						setPendingSessionId(null);
+						navigate(`/task/${taskId}`, { replace: true });
+					}}
+					onUpdateUserName={updateUserName}
+				/>
 			</div>
 
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel defaultSize={40} minSize={30}>
-					<div className="h-full flex flex-col">
-						<div className="p-4 border-b">
-							<SessionManager
-								session={session}
-								sessionId={sessionId}
-								user={user}
-								isConnected={isConnected}
-								isLoading={sessionLoading}
-								error={sessionError}
-								selectedChallenge={taskId || "default"}
-								pendingSessionId={pendingSessionId}
-								onCreateSession={createSession}
-								onJoinSession={(sessionId) => {
-									setPendingSessionId(null);
-									return joinSession(sessionId);
-								}}
-								onLeaveSession={leaveSession}
-								onUpdateUserName={updateUserName}
-							/>
-						</div>
-						<div className="flex-1 overflow-auto">
-							<TaskAndSchemaView task={task} />
-						</div>
+					<div className="h-full overflow-auto">
+						<TaskAndSchemaView task={task} />
 					</div>
 				</ResizablePanel>
 				<ResizableHandle withHandle />

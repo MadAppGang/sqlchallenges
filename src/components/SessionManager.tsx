@@ -93,106 +93,86 @@ export function SessionManager({
 
 	if (isConnected && session) {
 		return (
-			<Card className="mb-2">
-				<CardHeader className="py-2 px-3">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-1.5">
-							<Users className="h-3.5 w-3.5" />
-							<CardTitle className="text-xs">Session</CardTitle>
-							<Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
-								Live
-							</Badge>
-						</div>
-						<div className="flex items-center gap-1">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={copySessionLink}
-								className="h-6 px-2 text-xs"
-							>
-								{copied ? (
-									<Check className="h-3 w-3" />
-								) : (
-									<Link2 className="h-3 w-3" />
-								)}
-							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={onLeaveSession}
-								className="h-6 px-2"
-							>
-								<LogOut className="h-3 w-3" />
-							</Button>
-						</div>
+			<div className="flex items-center gap-2">
+				<Badge variant="outline" className="text-[10px] px-1 py-0 h-5">
+					Live
+				</Badge>
+				<TooltipProvider>
+					<div className="flex -space-x-1">
+						{activeParticipants.slice(0, 3).map((participant) => {
+							const isCurrentUser = participant.id === user?.id;
+							return (
+								<Tooltip key={participant.id}>
+									<TooltipTrigger>
+										<Avatar
+											className="h-6 w-6 border border-background"
+											style={{ borderColor: participant.color }}
+										>
+											<AvatarFallback
+												style={{ backgroundColor: participant.color }}
+												className="text-[10px] text-white"
+											>
+												{(() => {
+													const words = participant.name.split(' ');
+													if (words.length >= 2) {
+														return (words[0][0] + (words[1][0] || '')).toUpperCase();
+													} else {
+														return participant.name.substring(0, 2).toUpperCase();
+													}
+												})()}
+											</AvatarFallback>
+										</Avatar>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p className="text-xs">{participant.name} {isCurrentUser && "(You)"}</p>
+									</TooltipContent>
+								</Tooltip>
+							);
+						})}
 					</div>
-				</CardHeader>
-				<CardContent className="py-2 px-3 pt-0">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-1.5">
-							<TooltipProvider>
-								<div className="flex -space-x-1">
-									{activeParticipants.map((participant) => {
-										const isCurrentUser = participant.id === user?.id;
-										return (
-											<Tooltip key={participant.id}>
-												<TooltipTrigger>
-													<Avatar
-														className="h-6 w-6 border border-background"
-														style={{ borderColor: participant.color }}
-													>
-														<AvatarFallback
-															style={{ backgroundColor: participant.color }}
-															className="text-[10px] text-white"
-														>
-															{(() => {
-																const words = participant.name.split(' ');
-																if (words.length >= 2) {
-																	return (words[0][0] + (words[1][0] || '')).toUpperCase();
-																} else {
-																	return participant.name.substring(0, 2).toUpperCase();
-																}
-															})()}
-														</AvatarFallback>
-													</Avatar>
-												</TooltipTrigger>
-												<TooltipContent>
-													<p className="text-xs">{participant.name} {isCurrentUser && "(You)"}</p>
-												</TooltipContent>
-											</Tooltip>
-										);
-									})}
-								</div>
-							</TooltipProvider>
-							<span className="text-[10px] text-muted-foreground">
-								{user?.name} +{activeParticipants.length - 1}
-							</span>
-						</div>
-						{sessionId && (
-							<span className="text-[10px] text-muted-foreground font-mono">
-								{sessionId.slice(-6)}
-							</span>
-						)}
-					</div>
-				</CardContent>
-			</Card>
+				</TooltipProvider>
+				{activeParticipants.length > 3 && (
+					<span className="text-xs text-muted-foreground">
+						+{activeParticipants.length - 3}
+					</span>
+				)}
+				<span className="text-xs text-muted-foreground font-mono">
+					#{sessionId?.slice(-6)}
+				</span>
+				<Button
+					variant="ghost"
+					size="sm"
+					onClick={copySessionLink}
+					className="h-6 px-2"
+				>
+					{copied ? (
+						<Check className="h-3 w-3" />
+					) : (
+						<Link2 className="h-3 w-3" />
+					)}
+				</Button>
+				<Button
+					variant="ghost"
+					size="sm"
+					onClick={onLeaveSession}
+					className="h-6 px-2"
+				>
+					<LogOut className="h-3 w-3" />
+				</Button>
+			</div>
 		);
 	}
 
 	return (
-		<Card className="mb-2">
-			<CardHeader className="py-2 px-3">
-				<CardTitle className="text-xs">Start Collaborating</CardTitle>
-			</CardHeader>
-			<CardContent className="py-2 px-3 pt-0">
-				<div className="flex gap-2">
-					<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-						<DialogTrigger asChild>
-							<Button variant="default" size="sm" className="flex-1">
-								<Users className="h-3 w-3 mr-1" />
-								Create Session
-							</Button>
-						</DialogTrigger>
+		<div className="flex items-center gap-2">
+			<span className="text-xs text-muted-foreground">Start Collaborating:</span>
+			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+				<DialogTrigger asChild>
+					<Button variant="default" size="sm" className="h-7 px-3">
+						<Users className="h-3 w-3 mr-1" />
+						Create Session
+					</Button>
+				</DialogTrigger>
 						<DialogContent>
 							<DialogHeader>
 								<DialogTitle>Create Collaboration Session</DialogTitle>
@@ -219,15 +199,15 @@ export function SessionManager({
 								</Button>
 							</div>
 						</DialogContent>
-					</Dialog>
+			</Dialog>
 
-					<Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
-						<DialogTrigger asChild>
-							<Button variant="outline" size="sm" className="flex-1">
-								<Link2 className="h-3 w-3 mr-1" />
-								Join Session
-							</Button>
-						</DialogTrigger>
+			<Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+				<DialogTrigger asChild>
+					<Button variant="outline" size="sm" className="h-7 px-3">
+						<Link2 className="h-3 w-3 mr-1" />
+						Join Session
+					</Button>
+				</DialogTrigger>
 						<DialogContent>
 							<DialogHeader>
 								<DialogTitle>Join Collaboration Session</DialogTitle>
@@ -271,9 +251,7 @@ export function SessionManager({
 								</Button>
 							</div>
 						</DialogContent>
-					</Dialog>
-				</div>
-			</CardContent>
-		</Card>
+			</Dialog>
+		</div>
 	);
 }

@@ -35,11 +35,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	onSelectionChange,
 	currentUserId,
 }) => {
-	console.log('CodeEditor props:', { 
-		hasOnSelectionChange: !!onSelectionChange,
-		hasOnCursorChange: !!onCursorChange,
-		isCollaborating 
-	});
 	const [theme, setTheme] = useState<"vs" | "vs-dark">("vs");
 	const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<Monaco | null>(null);
@@ -71,13 +66,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
-		
-		console.log('Rendering cursors:', { 
-			cursorPositions, 
-			selections,
-			currentUserId,
-			participants 
-		});
 
 		// Clear previous decorations
 		if (cursorDecorationsRef.current.length > 0) {
@@ -106,16 +94,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			const hasSelection = userSelection && 
 				(userSelection.startLine !== userSelection.endLine || 
 				 userSelection.startColumn !== userSelection.endColumn);
-			
-			console.log(`User ${userId} cursor check:`, { 
-				hasSelection, 
-				selection: userSelection,
-				position 
-			});
 
 			// Only skip cursor if user has a multi-character selection
 			if (hasSelection) {
-				console.log(`Skipping cursor for ${userId} due to active selection`);
 				return;
 			}
 
@@ -169,19 +150,25 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	}, [cursorPositions, participants, currentUserId, isCollaborating, selections]);
 
 	// Render selections
+	const selectionWidgetsRef = useRef<Map<string, any>>(new Map());
+	
 	useEffect(() => {
 		if (!editorRef.current || !monacoRef.current || !isCollaborating) return;
 
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
-		
-		console.log('Rendering selections:', selections);
 
 		// Clear previous selection decorations
 		if (selectionDecorationsRef.current.length > 0) {
 			editor.deltaDecorations(selectionDecorationsRef.current, []);
 			selectionDecorationsRef.current = [];
 		}
+		
+		// Clear previous selection widgets
+		selectionWidgetsRef.current.forEach((widget) => {
+			editor.removeContentWidget(widget);
+		});
+		selectionWidgetsRef.current.clear();
 
 		// Add new selection decorations
 		const newDecorations: any[] = [];
@@ -194,7 +181,24 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			if (!participant || !participant.isActive) return;
 
 			// Create a semi-transparent version of the user's color
-			const rgbaColor = hexToRgba(participant.color, 0.3);
+			const rgbaColor = hexToRgba(participant.color, 0.25);
+
+			// Create a unique class name for this user's selection
+			const selectionClassName = `user-selection-${userId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+			
+			// Inject CSS for this specific user's selection color
+			const styleId = `selection-style-${userId}`;
+			let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+			if (!styleElement) {
+				styleElement = document.createElement('style');
+				styleElement.id = styleId;
+				document.head.appendChild(styleElement);
+			}
+			styleElement.textContent = `
+				.${selectionClassName} {
+					background-color: ${rgbaColor} !important;
+				}
+			`;
 
 			newDecorations.push({
 				range: new monaco.Range(
@@ -204,13 +208,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					selection.endColumn
 				),
 				options: {
-					className: `user-selection user-selection-${userId}`,
+					className: selectionClassName,
 					stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
 					isWholeLine: false,
-					// Inline decoration for background color
-					inlineClassName: `user-selection-inline`,
-					// Add a colored background
-					backgroundColor: rgbaColor,
 					// Add overview ruler marker
 					overviewRuler: {
 						color: participant.color,
@@ -223,6 +223,39 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					}
 				}
 			});
+			
+			// Add selection label widget
+			const selectionWidget = {
+				getId: () => `selection-label-${userId}`,
+				getDomNode: () => {
+					const container = document.createElement('div');
+					container.className = 'user-selection-label';
+					container.style.backgroundColor = participant.color;
+					container.style.color = 'white';
+					container.style.padding = '2px 6px';
+					container.style.borderRadius = '3px';
+					container.style.fontSize = '11px';
+					container.style.fontWeight = '500';
+					container.style.whiteSpace = 'nowrap';
+					container.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
+					container.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+					container.style.position = 'absolute';
+					container.style.zIndex = '1000';
+					container.textContent = participant.name;
+					
+					return container;
+				},
+				getPosition: () => ({
+					position: {
+						lineNumber: selection.startLine,
+						column: selection.startColumn,
+					},
+					preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE],
+				}),
+			};
+
+			editor.addContentWidget(selectionWidget);
+			selectionWidgetsRef.current.set(userId, selectionWidget);
 		});
 
 		selectionDecorationsRef.current = editor.deltaDecorations([], newDecorations);
@@ -232,6 +265,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 				editor.deltaDecorations(selectionDecorationsRef.current, []);
 				selectionDecorationsRef.current = [];
 			}
+			selectionWidgetsRef.current.forEach((widget) => {
+				editor.removeContentWidget(widget);
+			});
+			selectionWidgetsRef.current.clear();
 		};
 	}, [selections, participants, currentUserId, isCollaborating]);
 
@@ -269,30 +306,20 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 		editor: editor.IStandaloneCodeEditor,
 		monaco: Monaco,
 	) => {
-		console.log('Editor mounted');
 		editorRef.current = editor;
 		monacoRef.current = monaco;
 
 		// Set up cursor and selection listeners here where we know the editor is ready
-		console.log('Setting up cursor and selection listeners in mount');
-		
 		if (onCursorChange) {
 			editor.onDidChangeCursorPosition((e) => {
 				const position = e.position;
-				console.log('Cursor position changed in mount:', position);
 				onCursorChange(position.lineNumber, position.column);
 			});
-			console.log('Cursor listener added in mount');
 		}
 
 		if (onSelectionChange) {
 			editor.onDidChangeCursorSelection((e) => {
 				const selection = e.selection;
-				console.log('Selection changed in mount:', {
-					start: `${selection.startLineNumber}:${selection.startColumn}`,
-					end: `${selection.endLineNumber}:${selection.endColumn}`,
-					isEmpty: selection.isEmpty()
-				});
 				onSelectionChange(
 					selection.startLineNumber,
 					selection.startColumn,
@@ -300,7 +327,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					selection.endColumn
 				);
 			});
-			console.log('Selection listener added in mount');
 		}
 
 		// Configure SQL language features

@@ -176,13 +176,11 @@ class SessionService {
 	) {
 		if (!sessionId || !userId) return;
 
-		console.log('Updating cursor position in Firebase:', { sessionId, userId, line, column });
 		const cursorRef = ref(
 			realtimeDb,
 			`${SESSIONS_PATH}/${sessionId}/editor/cursorPositions/${userId}`,
 		);
 		await set(cursorRef, { line, column });
-		console.log('Cursor position updated in Firebase');
 	}
 
 	async updateSelection(
@@ -202,10 +200,8 @@ class SessionService {
 		
 		// If selection is empty (cursor position), remove the selection
 		if (startLine === endLine && startColumn === endColumn) {
-			console.log('Removing selection for user', userId);
 			await set(selectionRef, null);
 		} else {
-			console.log('Setting selection for user', userId, { startLine, startColumn, endLine, endColumn });
 			await set(selectionRef, { startLine, startColumn, endLine, endColumn });
 		}
 	}
