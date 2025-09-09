@@ -41,9 +41,11 @@ export async function initTaskDatabase(task: Task): Promise<PGlite> {
 	return db;
 }
 
-export async function executeTaskQuery(
-	sql: string,
-): Promise<{ result: any; error: string | null; executionTime: number }> {
+export async function executeTaskQuery(sql: string): Promise<{
+	result: Record<string, unknown>[] | null;
+	error: string | null;
+	executionTime: number;
+}> {
 	if (!db) {
 		return {
 			result: null,
@@ -61,11 +63,14 @@ export async function executeTaskQuery(
 			error: null,
 			executionTime,
 		};
-	} catch (error: any) {
+	} catch (error: unknown) {
 		const executionTime = performance.now() - startTime;
 		return {
 			result: null,
-			error: error.message || "Query execution failed",
+			error:
+				error instanceof Error
+					? error.message
+					: String(error ?? "Query execution failed"),
 			executionTime,
 		};
 	}
@@ -75,9 +80,11 @@ export async function getTaskDatabase(): Promise<PGlite | null> {
 	return db;
 }
 
-export async function executeQuery(
-	sql: string,
-): Promise<{ results: any[]; error: string | null; executionTime: number }> {
+export async function executeQuery(sql: string): Promise<{
+	results: Record<string, unknown>[];
+	error: string | null;
+	executionTime: number;
+}> {
 	if (!db) {
 		return {
 			results: [],
@@ -95,11 +102,14 @@ export async function executeQuery(
 			error: null,
 			executionTime,
 		};
-	} catch (error: any) {
+	} catch (error: unknown) {
 		const executionTime = performance.now() - startTime;
 		return {
 			results: [],
-			error: error.message || "Query execution failed",
+			error:
+				error instanceof Error
+					? error.message
+					: String(error ?? "Query execution failed"),
 			executionTime,
 		};
 	}

@@ -2,19 +2,19 @@
 
 /* Allow overflow for cursor labels */
 .monaco-editor .overflow-guard {
-	overflow: visible !important;
+	overflow: visible;
 }
 
 .monaco-editor .monaco-scrollable-element {
-	overflow: visible !important;
+	overflow: visible;
 }
 
 .monaco-editor .lines-content {
-	overflow: visible !important;
+	overflow: visible;
 }
 
 .monaco-editor .view-lines {
-	overflow: visible !important;
+	overflow: visible;
 }
 
 .user-cursor {
@@ -55,10 +55,12 @@
 }
 
 @keyframes cursorBlink {
-	0%, 50% {
+	0%,
+	50% {
 		opacity: 1;
 	}
-	51%, 100% {
+	51%,
+	100% {
 		opacity: 0;
 	}
 }

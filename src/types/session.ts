@@ -37,7 +37,7 @@ export interface SelectionRange {
 }
 
 export interface QueryResultsState {
-	results: any[];
+	results: Record<string, unknown>[];
 	executionTime: number;
 	error: string | null;
 	timestamp: number;

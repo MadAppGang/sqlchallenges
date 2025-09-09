@@ -1,13 +1,24 @@
-import React, { useState, Fragment } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Users, Copy, Check, Link2, LogOut, User } from "lucide-react";
+import { Check, Copy, Link2, LogOut, Users } from "lucide-react";
+import React, { useId, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { CollaborationSession, SessionUser } from "@/types/session";
 
 interface SessionManagerProps {
@@ -39,6 +50,9 @@ export function SessionManager({
 	onLeaveSession,
 	onUpdateUserName,
 }: SessionManagerProps) {
+	const createNameId = useId();
+	const joinNameId = useId();
+	const joinSessionInputId = useId();
 	const [joinSessionId, setJoinSessionId] = useState("");
 	const [userName, setUserName] = useState(user?.name || "");
 	const [copied, setCopied] = useState(false);
@@ -128,18 +142,24 @@ export function SessionManager({
 														className="text-[10px] text-white"
 													>
 														{(() => {
-															const words = participant.name.split(' ');
+															const words = participant.name.split(" ");
 															if (words.length >= 2) {
-																return (words[0][0] + (words[1][0] || '')).toUpperCase();
+																return (
+																	words[0][0] + (words[1][0] || "")
+																).toUpperCase();
 															} else {
-																return participant.name.substring(0, 2).toUpperCase();
+																return participant.name
+																	.substring(0, 2)
+																	.toUpperCase();
 															}
 														})()}
 													</AvatarFallback>
 												</Avatar>
 											</TooltipTrigger>
 											<TooltipContent>
-												<p className="text-xs">{participant.name} {isCurrentUser && "(You)"}</p>
+												<p className="text-xs">
+													{participant.name} {isCurrentUser && "(You)"}
+												</p>
 											</TooltipContent>
 										</Tooltip>
 									);
@@ -177,7 +197,9 @@ export function SessionManager({
 					</div>
 				) : (
 					<div className="flex items-center gap-2">
-						<span className="text-xs text-muted-foreground">Creating session...</span>
+						<span className="text-xs text-muted-foreground">
+							Creating session...
+						</span>
 					</div>
 				)}
 				<Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
@@ -185,7 +207,8 @@ export function SessionManager({
 						<DialogHeader>
 							<DialogTitle>Session Created!</DialogTitle>
 							<DialogDescription>
-								Your collaboration session is ready. Share the link below with others.
+								Your collaboration session is ready. Share the link below with
+								others.
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-4 pt-4">
@@ -197,11 +220,7 @@ export function SessionManager({
 										readOnly
 										className="font-mono text-sm"
 									/>
-									<Button
-										variant="outline"
-										size="icon"
-										onClick={copyShareLink}
-									>
+									<Button variant="outline" size="icon" onClick={copyShareLink}>
 										{copied ? (
 											<Check className="h-4 w-4" />
 										) : (
@@ -245,18 +264,24 @@ export function SessionManager({
 												className="text-[10px] text-white"
 											>
 												{(() => {
-													const words = participant.name.split(' ');
+													const words = participant.name.split(" ");
 													if (words.length >= 2) {
-														return (words[0][0] + (words[1][0] || '')).toUpperCase();
+														return (
+															words[0][0] + (words[1][0] || "")
+														).toUpperCase();
 													} else {
-														return participant.name.substring(0, 2).toUpperCase();
+														return participant.name
+															.substring(0, 2)
+															.toUpperCase();
 													}
 												})()}
 											</AvatarFallback>
 										</Avatar>
 									</TooltipTrigger>
 									<TooltipContent>
-										<p className="text-xs">{participant.name} {isCurrentUser && "(You)"}</p>
+										<p className="text-xs">
+											{participant.name} {isCurrentUser && "(You)"}
+										</p>
 									</TooltipContent>
 								</Tooltip>
 							);
@@ -297,7 +322,9 @@ export function SessionManager({
 
 	return (
 		<div className="flex items-center gap-2">
-			<span className="text-xs text-muted-foreground">Start Collaborating:</span>
+			<span className="text-xs text-muted-foreground">
+				Start Collaborating:
+			</span>
 			<Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
 				<DialogTrigger asChild>
 					<Button variant="default" size="sm" className="h-7 px-3">
@@ -305,35 +332,34 @@ export function SessionManager({
 						Create Session
 					</Button>
 				</DialogTrigger>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Create Collaboration Session</DialogTitle>
-								<DialogDescription>
-									Start a new collaboration session to work with others in real-time.
-								</DialogDescription>
-							</DialogHeader>
-							<div className="space-y-4 pt-4">
-								<div className="space-y-2">
-									<Label htmlFor="userName">Your Name</Label>
-									<Input
-										id="userName"
-										placeholder="Enter your name"
-										value={userName}
-										onChange={(e) => setUserName(e.target.value)}
-									/>
-								</div>
-								{error && (
-									<p className="text-sm text-destructive">{error}</p>
-								)}
-								<Button
-									onClick={handleCreateSession}
-									disabled={isLoading || !userName}
-									className="w-full"
-								>
-									{isLoading ? "Creating..." : "Create Session"}
-								</Button>
-							</div>
-						</DialogContent>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create Collaboration Session</DialogTitle>
+						<DialogDescription>
+							Start a new collaboration session to work with others in
+							real-time.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 pt-4">
+						<div className="space-y-2">
+							<Label htmlFor={createNameId}>Your Name</Label>
+							<Input
+								id={createNameId}
+								placeholder="Enter your name"
+								value={userName}
+								onChange={(e) => setUserName(e.target.value)}
+							/>
+						</div>
+						{error && <p className="text-sm text-destructive">{error}</p>}
+						<Button
+							onClick={handleCreateSession}
+							disabled={isLoading || !userName}
+							className="w-full"
+						>
+							{isLoading ? "Creating..." : "Create Session"}
+						</Button>
+					</div>
+				</DialogContent>
 			</Dialog>
 
 			<Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
@@ -343,52 +369,50 @@ export function SessionManager({
 						Join Session
 					</Button>
 				</DialogTrigger>
-						<DialogContent>
-							<DialogHeader>
-								<DialogTitle>Join Collaboration Session</DialogTitle>
-								<DialogDescription>
-									Enter a session ID to join an existing collaboration session.
-								</DialogDescription>
-							</DialogHeader>
-							<div className="space-y-4 pt-4">
-								<div className="space-y-2">
-									<Label htmlFor="userNameJoin">Your Name</Label>
-									<Input
-										id="userNameJoin"
-										placeholder="Enter your name"
-										value={userName}
-										onChange={(e) => setUserName(e.target.value)}
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="sessionId">Session ID or Link</Label>
-									<Input
-										id="sessionId"
-										placeholder="Enter session ID or paste link"
-										value={joinSessionId}
-										onChange={(e) => {
-											const value = e.target.value;
-											const sessionMatch = value.match(/session=([^&]+)/);
-											if (sessionMatch) {
-												setJoinSessionId(sessionMatch[1]);
-											} else {
-												setJoinSessionId(value);
-											}
-										}}
-									/>
-								</div>
-								{error && (
-									<p className="text-sm text-destructive">{error}</p>
-								)}
-								<Button
-									onClick={handleJoinSession}
-									disabled={isLoading || !joinSessionId || !userName}
-									className="w-full"
-								>
-									{isLoading ? "Joining..." : "Join Session"}
-								</Button>
-							</div>
-						</DialogContent>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Join Collaboration Session</DialogTitle>
+						<DialogDescription>
+							Enter a session ID to join an existing collaboration session.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 pt-4">
+						<div className="space-y-2">
+							<Label htmlFor={joinNameId}>Your Name</Label>
+							<Input
+								id={joinNameId}
+								placeholder="Enter your name"
+								value={userName}
+								onChange={(e) => setUserName(e.target.value)}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor={joinSessionInputId}>Session ID or Link</Label>
+							<Input
+								id={joinSessionInputId}
+								placeholder="Enter session ID or paste link"
+								value={joinSessionId}
+								onChange={(e) => {
+									const value = e.target.value;
+									const sessionMatch = value.match(/session=([^&]+)/);
+									if (sessionMatch) {
+										setJoinSessionId(sessionMatch[1]);
+									} else {
+										setJoinSessionId(value);
+									}
+								}}
+							/>
+						</div>
+						{error && <p className="text-sm text-destructive">{error}</p>}
+						<Button
+							onClick={handleJoinSession}
+							disabled={isLoading || !joinSessionId || !userName}
+							className="w-full"
+						>
+							{isLoading ? "Joining..." : "Join Session"}
+						</Button>
+					</div>
+				</DialogContent>
 			</Dialog>
 		</div>
 	);

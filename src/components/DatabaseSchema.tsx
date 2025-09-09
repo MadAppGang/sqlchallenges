@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { executeQuery } from "../lib/taskDatabase";
 import ERDiagram from "./ERDiagram";
 
@@ -25,11 +25,7 @@ const DatabaseSchema: React.FC = () => {
 	const [tables, setTables] = useState<TableSchema[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		loadDatabaseSchema();
-	}, []);
-
-	const loadDatabaseSchema = async () => {
+	const loadDatabaseSchema = useCallback(async () => {
 		try {
 			// Get all foreign keys from the database
 			const foreignKeysResult = await executeQuery(`
@@ -174,7 +170,11 @@ const DatabaseSchema: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		loadDatabaseSchema();
+	}, [loadDatabaseSchema]);
 
 	if (loading) {
 		return (

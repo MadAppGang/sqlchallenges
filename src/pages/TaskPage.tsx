@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, useRef } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { CodeEditor } from "@/components/CodeEditor";
 import { QueryResults } from "@/components/QueryResults";
 import { SessionManager } from "@/components/SessionManager";
@@ -18,7 +18,7 @@ import type { Task } from "@/types/task";
 interface QueryExecution {
 	id: string;
 	query: string;
-	result: any;
+	result: Record<string, unknown>[] | null;
 	error: string | null;
 	executionTime: number;
 	timestamp: Date;
@@ -34,7 +34,7 @@ export function TaskPage() {
 	const [loading, setLoading] = useState(true);
 	const [query, setQuery] = useState("");
 	const [queryHistory, setQueryHistory] = useState<QueryExecution[]>([]);
-	const [isExecuting, setIsExecuting] = useState(false);
+	const [_isExecuting, setIsExecuting] = useState(false);
 	const [isRemoteUpdate, setIsRemoteUpdate] = useState(false);
 	const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
 
@@ -49,18 +49,32 @@ export function TaskPage() {
 		joinSession,
 		updateEditorContent,
 		updateQueryResults,
-		updateSelectedChallenge,
 		updateCursorPosition,
 		updateSelection,
 		leaveSession,
 		updateUserName,
 	} = useCollaborationSession();
 
+	const loadTask = useCallback(async (id: string) => {
+		try {
+			setLoading(true);
+			const taskData = await taskService.getTaskById(id);
+			if (taskData) {
+				setTask(taskData);
+				await initTaskDatabase(taskData);
+			}
+		} catch (error) {
+			console.error("Failed to load task:", error);
+		} finally {
+			setLoading(false);
+		}
+	}, []);
+
 	useEffect(() => {
 		if (taskId) {
 			loadTask(taskId);
 		}
-	}, [taskId]);
+	}, [taskId, loadTask]);
 
 	useEffect(() => {
 		if (sessionIdFromUrl && !isConnected && !pendingSessionId) {
@@ -68,7 +82,6 @@ export function TaskPage() {
 			setPendingSessionId(sessionIdFromUrl);
 		}
 	}, [sessionIdFromUrl, isConnected, pendingSessionId]);
-
 
 	useEffect(() => {
 		if (
@@ -80,7 +93,7 @@ export function TaskPage() {
 			// Reset the flag after a short delay to allow the editor to update
 			setTimeout(() => setIsRemoteUpdate(false), 100);
 		}
-	}, [session?.editor?.content]);
+	}, [session?.editor?.content, query]);
 
 	useEffect(() => {
 		if (session?.queryResults) {
@@ -103,20 +116,7 @@ export function TaskPage() {
 		}
 	}, [session?.queryResults, session?.editor?.content]);
 
-	async function loadTask(id: string) {
-		try {
-			setLoading(true);
-			const taskData = await taskService.getTaskById(id);
-			if (taskData) {
-				setTask(taskData);
-				await initTaskDatabase(taskData);
-			}
-		} catch (error) {
-			console.error("Failed to load task:", error);
-		} finally {
-			setLoading(false);
-		}
-	}
+	// moved into useCallback above
 
 	const handleQueryChange = useCallback(
 		(newValue: string) => {
@@ -139,7 +139,12 @@ export function TaskPage() {
 	);
 
 	const handleSelectionChange = useCallback(
-		(startLine: number, startColumn: number, endLine: number, endColumn: number) => {
+		(
+			startLine: number,
+			startColumn: number,
+			endLine: number,
+			endColumn: number,
+		) => {
 			// Don't update selection if this is a remote update
 			if (isConnected && !isRemoteUpdate) {
 				updateSelection(startLine, startColumn, endLine, endColumn);

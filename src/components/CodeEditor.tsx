@@ -1,9 +1,14 @@
 import Editor, { type Monaco } from "@monaco-editor/react";
 import { Play, Users } from "lucide-react";
+import type * as MonacoApi from "monaco-editor";
 import type { editor } from "monaco-editor";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Participant, CursorPosition, SelectionRange } from "@/types/session";
+import type {
+	CursorPosition,
+	Participant,
+	SelectionRange,
+} from "@/types/session";
 import { databaseSchema } from "../lib/databaseSchema";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -19,7 +24,12 @@ interface CodeEditorProps {
 	cursorPositions?: Record<string, CursorPosition>;
 	selections?: Record<string, SelectionRange>;
 	onCursorChange?: (line: number, column: number) => void;
-	onSelectionChange?: (startLine: number, startColumn: number, endLine: number, endColumn: number) => void;
+	onSelectionChange?: (
+		startLine: number,
+		startColumn: number,
+		endLine: number,
+		endColumn: number,
+	) => void;
 	currentUserId?: string;
 }
 
@@ -39,7 +49,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<Monaco | null>(null);
 	const cursorDecorationsRef = useRef<string[]>([]);
-	const cursorWidgetsRef = useRef<Map<string, any>>(new Map());
+	const cursorWidgetsRef = useRef<Map<string, editor.IContentWidget>>(
+		new Map(),
+	);
 	const selectionDecorationsRef = useRef<string[]>([]);
 
 	// Always use light theme for consistency
@@ -54,21 +66,21 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 	// Set up cursor and selection listeners with proper dependency tracking
 	useEffect(() => {
 		if (!editorRef.current || !onCursorChange) return;
-		
+
 		const editor = editorRef.current;
 		const disposable = editor.onDidChangeCursorPosition((e) => {
 			const position = e.position;
 			onCursorChange(position.lineNumber, position.column);
 		});
-		
+
 		return () => {
 			disposable.dispose();
 		};
 	}, [onCursorChange]);
-	
+
 	useEffect(() => {
 		if (!editorRef.current || !onSelectionChange) return;
-		
+
 		const editor = editorRef.current;
 		const disposable = editor.onDidChangeCursorSelection((e) => {
 			const selection = e.selection;
@@ -76,10 +88,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 				selection.startLineNumber,
 				selection.startColumn,
 				selection.endLineNumber,
-				selection.endColumn
+				selection.endColumn,
 			);
 		});
-		
+
 		return () => {
 			disposable.dispose();
 		};
@@ -87,7 +99,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
 	// Render other users' cursors
 	useEffect(() => {
-		
 		if (!editorRef.current || !monacoRef.current || !isCollaborating) return;
 
 		const editor = editorRef.current;
@@ -106,20 +117,20 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 		cursorWidgetsRef.current.clear();
 
 		// Add new cursor decorations for each participant
-		const newDecorations: any[] = [];
 
 		Object.entries(cursorPositions || {}).forEach(([userId, position]) => {
 			// Skip current user's cursor - we don't need to show our own cursor
 			if (userId === currentUserId) return;
 
-			const participant = participants.find(p => p.id === userId);
+			const participant = participants.find((p) => p.id === userId);
 			if (!participant || !participant.isActive) return;
 
 			// Check if user has an active selection (not just a cursor position)
 			const userSelection = selections?.[userId];
-			const hasSelection = userSelection && 
-				(userSelection.startLine !== userSelection.endLine || 
-				 userSelection.startColumn !== userSelection.endColumn);
+			const hasSelection =
+				userSelection &&
+				(userSelection.startLine !== userSelection.endLine ||
+					userSelection.startColumn !== userSelection.endColumn);
 
 			// Only skip cursor if user has a multi-character selection
 			if (hasSelection) {
@@ -130,23 +141,23 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			const cursorWidget = {
 				getId: () => `cursor-${userId}`,
 				getDomNode: () => {
-					const container = document.createElement('div');
-					container.className = 'user-cursor';
-					
+					const container = document.createElement("div");
+					container.className = "user-cursor";
+
 					// Create cursor line
-					const cursorLine = document.createElement('div');
-					cursorLine.className = 'user-cursor-line';
+					const cursorLine = document.createElement("div");
+					cursorLine.className = "user-cursor-line";
 					cursorLine.style.backgroundColor = participant.color;
-					
+
 					// Create label
-					const label = document.createElement('div');
-					label.className = 'user-cursor-label';
+					const label = document.createElement("div");
+					label.className = "user-cursor-label";
 					label.style.backgroundColor = participant.color;
 					label.textContent = participant.name;
-					
+
 					container.appendChild(cursorLine);
 					container.appendChild(label);
-					
+
 					return container;
 				},
 				getPosition: () => ({
@@ -173,24 +184,39 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			});
 			cursorWidgetsRef.current.clear();
 		};
-	}, [cursorPositions, participants, currentUserId, isCollaborating, selections]);
+	}, [
+		cursorPositions,
+		participants,
+		currentUserId,
+		isCollaborating,
+		selections,
+	]);
+
+	// Helper: convert hex color to rgba
+	const hexToRgba = useCallback((hex: string, alpha: number) => {
+		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result
+			? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`
+			: `rgba(128, 128, 128, ${alpha})`;
+	}, []);
 
 	// Render selections
-	const selectionWidgetsRef = useRef<Map<string, any>>(new Map());
-	
+	const selectionWidgetsRef = useRef<Map<string, editor.IContentWidget>>(
+		new Map(),
+	);
+
 	useEffect(() => {
 		if (!editorRef.current || !monacoRef.current || !isCollaborating) return;
 
 		const editor = editorRef.current;
 		const monaco = monacoRef.current;
-		
 
 		// Clear previous selection decorations
 		if (selectionDecorationsRef.current.length > 0) {
 			editor.deltaDecorations(selectionDecorationsRef.current, []);
 			selectionDecorationsRef.current = [];
 		}
-		
+
 		// Clear previous selection widgets
 		selectionWidgetsRef.current.forEach((widget) => {
 			editor.removeContentWidget(widget);
@@ -198,26 +224,26 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 		selectionWidgetsRef.current.clear();
 
 		// Add new selection decorations
-		const newDecorations: any[] = [];
+		const newDecorations: editor.IModelDeltaDecoration[] = [];
 
 		Object.entries(selections || {}).forEach(([userId, selection]) => {
 			// Skip current user's selection
 			if (userId === currentUserId) return;
 
-			const participant = participants.find(p => p.id === userId);
+			const participant = participants.find((p) => p.id === userId);
 			if (!participant || !participant.isActive) return;
 
 			// Create a semi-transparent version of the user's color
 			const rgbaColor = hexToRgba(participant.color, 0.25);
 
 			// Create a unique class name for this user's selection
-			const selectionClassName = `user-selection-${userId.replace(/[^a-zA-Z0-9]/g, '-')}`;
-			
+			const selectionClassName = `user-selection-${userId.replace(/[^a-zA-Z0-9]/g, "-")}`;
+
 			// Inject CSS for this specific user's selection color
 			const styleId = `selection-style-${userId}`;
 			let styleElement = document.getElementById(styleId) as HTMLStyleElement;
 			if (!styleElement) {
-				styleElement = document.createElement('style');
+				styleElement = document.createElement("style");
 				styleElement.id = styleId;
 				document.head.appendChild(styleElement);
 			}
@@ -232,44 +258,45 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					selection.startLine,
 					selection.startColumn,
 					selection.endLine,
-					selection.endColumn
+					selection.endColumn,
 				),
 				options: {
 					className: selectionClassName,
-					stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+					stickiness:
+						monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
 					isWholeLine: false,
 					// Add overview ruler marker
 					overviewRuler: {
 						color: participant.color,
-						position: monaco.editor.OverviewRulerLane.Full
+						position: monaco.editor.OverviewRulerLane.Full,
 					},
 					// Add minimap marker
 					minimap: {
 						color: participant.color,
-						position: monaco.editor.MinimapPosition.Inline
-					}
-				}
+						position: monaco.editor.MinimapPosition.Inline,
+					},
+				},
 			});
-			
+
 			// Add selection label widget
 			const selectionWidget = {
 				getId: () => `selection-label-${userId}`,
 				getDomNode: () => {
-					const container = document.createElement('div');
-					container.className = 'user-selection-label';
+					const container = document.createElement("div");
+					container.className = "user-selection-label";
 					container.style.backgroundColor = participant.color;
-					container.style.color = 'white';
-					container.style.padding = '2px 6px';
-					container.style.borderRadius = '3px';
-					container.style.fontSize = '11px';
-					container.style.fontWeight = '500';
-					container.style.whiteSpace = 'nowrap';
-					container.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.2)';
-					container.style.fontFamily = 'system-ui, -apple-system, sans-serif';
-					container.style.position = 'absolute';
-					container.style.zIndex = '1000';
+					container.style.color = "white";
+					container.style.padding = "2px 6px";
+					container.style.borderRadius = "3px";
+					container.style.fontSize = "11px";
+					container.style.fontWeight = "500";
+					container.style.whiteSpace = "nowrap";
+					container.style.boxShadow = "0 2px 4px rgba(0, 0, 0, 0.2)";
+					container.style.fontFamily = "system-ui, -apple-system, sans-serif";
+					container.style.position = "absolute";
+					container.style.zIndex = "1000";
 					container.textContent = participant.name;
-					
+
 					return container;
 				},
 				getPosition: () => ({
@@ -285,7 +312,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			selectionWidgetsRef.current.set(userId, selectionWidget);
 		});
 
-		selectionDecorationsRef.current = editor.deltaDecorations([], newDecorations);
+		selectionDecorationsRef.current = editor.deltaDecorations(
+			[],
+			newDecorations,
+		);
 
 		return () => {
 			if (selectionDecorationsRef.current.length > 0) {
@@ -297,19 +327,13 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 			});
 			selectionWidgetsRef.current.clear();
 		};
-	}, [selections, participants, currentUserId, isCollaborating]);
+	}, [selections, participants, currentUserId, isCollaborating, hexToRgba]);
 
-	// Helper function to convert hex to rgba
-	const hexToRgba = (hex: string, alpha: number) => {
-		const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-		return result
-			? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`
-			: `rgba(128, 128, 128, ${alpha})`;
-	};
+	// moved hexToRgba above to a memoized callback
 
-	const handleRunQuery = () => {
+	const handleRunQuery = useCallback(() => {
 		onRun();
-	};
+	}, [onRun]);
 
 	// Handle keyboard shortcut
 	const handleKeyDown = useCallback(
@@ -319,7 +343,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 				handleRunQuery();
 			}
 		},
-		[value],
+		[handleRunQuery],
 	);
 
 	useEffect(() => {
@@ -348,7 +372,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 				};
 
 				// Create suggestions from schema
-				const suggestions: any[] = [];
+				const suggestions: MonacoApi.languages.CompletionItem[] = [];
 
 				// Add table suggestions
 				for (const table of databaseSchema) {
@@ -460,7 +484,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 					options={{
 						minimap: { enabled: false },
 						fontSize: 14,
-						fontFamily: "'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+						fontFamily:
+							"'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
 						lineNumbers: "on",
 						scrollBeyondLastLine: false,
 						automaticLayout: true,

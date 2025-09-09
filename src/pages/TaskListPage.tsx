@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { get, ref } from "firebase/database";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ChallengesList, { type Challenge } from "@/components/ChallengesList";
+import { realtimeDb } from "@/lib/firebase";
 import { taskService } from "@/services/taskService";
 import type { Task } from "@/types/task";
-import { ref, get } from "firebase/database";
-import { realtimeDb } from "@/lib/firebase";
 
 export function TaskListPage() {
 	const navigate = useNavigate();
@@ -12,45 +12,7 @@ export function TaskListPage() {
 	const [tasks, setTasks] = useState<Task[]>([]);
 	const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		// Check if there's a session parameter in the URL
-		const sessionId = searchParams.get("session");
-		if (sessionId) {
-			// Fetch session data to get the task ID
-			fetchSessionAndRedirect(sessionId);
-		} else {
-			loadTasks();
-		}
-	}, [searchParams]);
-
-	async function fetchSessionAndRedirect(sessionId: string) {
-		try {
-			const sessionRef = ref(realtimeDb, `sessions/${sessionId}`);
-			const snapshot = await get(sessionRef);
-			
-			if (snapshot.exists()) {
-				const sessionData = snapshot.val();
-				const taskId = sessionData.selectedChallenge;
-				
-				if (taskId) {
-					// Redirect to the task page with the session parameter
-					navigate(`/task/${taskId}?session=${sessionId}`);
-				} else {
-					// If no task in session, just load the task list
-					loadTasks();
-				}
-			} else {
-				// Session not found, load normal task list
-				console.warn("Session not found:", sessionId);
-				loadTasks();
-			}
-		} catch (error) {
-			console.error("Error fetching session:", error);
-			loadTasks();
-		}
-	}
-
-	async function loadTasks() {
+	const loadTasks = useCallback(async () => {
 		try {
 			setLoading(true);
 			const publicTasks = await taskService.getPublicTasks();
@@ -61,19 +23,60 @@ export function TaskListPage() {
 		} finally {
 			setLoading(false);
 		}
-	}
+	}, []);
+
+	const fetchSessionAndRedirect = useCallback(
+		async (sessionId: string) => {
+			try {
+				const sessionRef = ref(realtimeDb, `sessions/${sessionId}`);
+				const snapshot = await get(sessionRef);
+
+				if (snapshot.exists()) {
+					const sessionData = snapshot.val();
+					const taskId = sessionData.selectedChallenge;
+
+					if (taskId) {
+						// Redirect to the task page with the session parameter
+						navigate(`/task/${taskId}?session=${sessionId}`);
+					} else {
+						// If no task in session, just load the task list
+						loadTasks();
+					}
+				} else {
+					// Session not found, load normal task list
+					console.warn("Session not found:", sessionId);
+					loadTasks();
+				}
+			} catch (error) {
+				console.error("Error fetching session:", error);
+				loadTasks();
+			}
+		},
+		[navigate, loadTasks],
+	);
+
+	useEffect(() => {
+		// Check if there's a session parameter in the URL
+		const sessionId = searchParams.get("session");
+		if (sessionId) {
+			// Fetch session data to get the task ID
+			fetchSessionAndRedirect(sessionId);
+		} else {
+			loadTasks();
+		}
+	}, [searchParams, fetchSessionAndRedirect, loadTasks]);
 
 	// Convert Task[] to Challenge[] format
 	// Create a map to store the relationship between challenge ID and task ID
 	const taskIdMap = new Map<number, string>();
-	
+
 	const challenges: Challenge[] = tasks.map((task, index) => {
 		const challengeId = index + 1;
 		taskIdMap.set(challengeId, task.id);
-		
+
 		// Only show as featured if explicitly marked in the database
 		const shouldBeFeatured = task.isFeatured === true;
-		
+
 		return {
 			id: challengeId, // Using index as id since Challenge expects number
 			title: task.title,

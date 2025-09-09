@@ -9,13 +9,12 @@ import {
 import React, { useEffect, useRef } from "react";
 import { Alert, AlertDescription } from "./ui/alert";
 import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface QueryExecution {
 	id: string;
 	query: string;
-	result: any;
+	result: Record<string, unknown>[] | null;
 	error: string | null;
 	executionTime: number;
 	timestamp: Date;
@@ -112,8 +111,9 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 								}`}
 							>
 								{/* Query Header */}
-								<div
-									className={`px-3 py-2 bg-muted/40 flex items-center justify-between cursor-pointer hover:bg-muted/60 transition-colors`}
+								<button
+									type="button"
+									className={`w-full px-3 py-2 bg-muted/40 flex items-center justify-between cursor-pointer hover:bg-muted/60 transition-colors text-left`}
 									onClick={() => toggleCollapse(execution.id)}
 								>
 									<div className="flex items-center gap-2 flex-1 min-w-0">
@@ -138,15 +138,15 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 										<span className="text-xs text-muted-foreground">
 											{new Date(execution.timestamp).toLocaleTimeString()}
 										</span>
-										<Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+										<span className="h-6 w-6 p-0 inline-flex items-center justify-center">
 											{isCollapsed ? (
 												<ChevronDown className="w-4 h-4" />
 											) : (
 												<ChevronUp className="w-4 h-4" />
 											)}
-										</Button>
+										</span>
 									</div>
-								</div>
+								</button>
 
 								{/* Query Content */}
 								{!isCollapsed && (
@@ -180,12 +180,15 @@ export const QueryResults: React.FC<QueryResultsProps> = ({
 														<tbody className="divide-y divide-border">
 															{execution.result
 																.slice(0, 10)
-																.map((row: any, idx: number) => (
-																	<tr key={idx} className="hover:bg-muted/20">
+																.map((row: Record<string, unknown>) => (
+																	<tr
+																		key={JSON.stringify(row)}
+																		className="hover:bg-muted/20"
+																	>
 																		{Object.keys(row).map((col) => (
 																			<td key={col} className="px-3 py-1.5">
 																				{row[col] !== null ? (
-																					String(row[col])
+																					String(row[col as keyof typeof row])
 																				) : (
 																					<span className="text-muted-foreground italic">
 																						NULL

@@ -12,18 +12,10 @@ import {
 	useNodesState,
 } from "@xyflow/react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useId, useMemo } from "react";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
-import {
-	Circle,
-	CircleDot,
-	Database,
-	Diamond,
-	Hash,
-	Key,
-	Link2,
-} from "lucide-react";
+import { Circle, CircleDot, Database, Hash, Key, Link2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 interface TableSchema {
@@ -51,6 +43,7 @@ interface ERDiagramProps {
 // Custom Table Node Component
 const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 	const { table } = data;
+	const idSuffix = useId();
 
 	const detectColumnAttributes = (
 		column: TableSchema["columns"][0],
@@ -91,25 +84,25 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 			<Handle
 				type="target"
 				position={Position.Left}
-				id="left"
+				id={`left-${idSuffix}`}
 				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
 			<Handle
 				type="source"
 				position={Position.Right}
-				id="right"
+				id={`right-${idSuffix}`}
 				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
 			<Handle
 				type="target"
 				position={Position.Top}
-				id="top"
+				id={`top-${idSuffix}`}
 				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
 			<Handle
 				type="source"
 				position={Position.Bottom}
-				id="bottom"
+				id={`bottom-${idSuffix}`}
 				style={{ background: "#6366f1", width: "10px", height: "10px" }}
 			/>
 
@@ -130,8 +123,8 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 
 				{/* Columns - Solid white background */}
 				<div className="bg-white" style={{ backgroundColor: "#ffffff" }}>
-					{table.columns.map((column, index) => {
-						const { isPrimaryKey, isForeignKey, isUnique, isNullable } =
+					{table.columns.map((column, _index) => {
+						const { isPrimaryKey, isForeignKey, isNullable } =
 							detectColumnAttributes(column, table.tableName);
 
 						const typeDisplay = column.type
@@ -149,7 +142,7 @@ const TableNode = ({ data }: { data: { table: TableSchema } }) => {
 
 						return (
 							<div
-								key={index}
+								key={column.name}
 								className="px-3 py-2 flex items-center gap-2 bg-white hover:bg-gray-50 transition-colors border-b border-gray-200 last:border-b-0"
 							>
 								{/* Icons */}

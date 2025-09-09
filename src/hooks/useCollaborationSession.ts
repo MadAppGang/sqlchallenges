@@ -1,6 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { sessionService } from "@/services/sessionService";
-import type { CollaborationSession, SessionUser, QueryResultsState } from "@/types/session";
+import type {
+	CollaborationSession,
+	QueryResultsState,
+	SessionUser,
+} from "@/types/session";
 
 export function useCollaborationSession() {
 	const [session, setSession] = useState<CollaborationSession | null>(null);
@@ -33,18 +37,26 @@ export function useCollaborationSession() {
 			setError(null);
 
 			try {
-				const newSessionId = await sessionService.createSession(user, selectedChallenge);
+				const newSessionId = await sessionService.createSession(
+					user,
+					selectedChallenge,
+				);
 				setSessionId(newSessionId);
 				setIsConnected(true);
 
-				const unsubscribe = sessionService.subscribeToSession(newSessionId, (sessionData) => {
-					// Force a new object to ensure React detects changes
-					setSession(sessionData ? { ...sessionData } : null);
-				});
+				const _unsubscribe = sessionService.subscribeToSession(
+					newSessionId,
+					(sessionData) => {
+						// Force a new object to ensure React detects changes
+						setSession(sessionData ? { ...sessionData } : null);
+					},
+				);
 
 				return newSessionId;
 			} catch (err) {
-				setError(err instanceof Error ? err.message : "Failed to create session");
+				setError(
+					err instanceof Error ? err.message : "Failed to create session",
+				);
 				return null;
 			} finally {
 				setIsLoading(false);
@@ -68,7 +80,7 @@ export function useCollaborationSession() {
 					setSessionId(sessionIdToJoin);
 					setIsConnected(true);
 
-					const unsubscribe = sessionService.subscribeToSession(
+					const _unsubscribe = sessionService.subscribeToSession(
 						sessionIdToJoin,
 						(sessionData) => {
 							// Force a new object to ensure React detects changes
@@ -116,15 +128,32 @@ export function useCollaborationSession() {
 	const updateCursorPosition = useCallback(
 		async (line: number, column: number) => {
 			if (!sessionId || !user) return;
-			await sessionService.updateCursorPosition(sessionId, user.id, line, column);
+			await sessionService.updateCursorPosition(
+				sessionId,
+				user.id,
+				line,
+				column,
+			);
 		},
 		[sessionId, user],
 	);
 
 	const updateSelection = useCallback(
-		async (startLine: number, startColumn: number, endLine: number, endColumn: number) => {
+		async (
+			startLine: number,
+			startColumn: number,
+			endLine: number,
+			endColumn: number,
+		) => {
 			if (!sessionId || !user) return;
-			await sessionService.updateSelection(sessionId, user.id, startLine, startColumn, endLine, endColumn);
+			await sessionService.updateSelection(
+				sessionId,
+				user.id,
+				startLine,
+				startColumn,
+				endLine,
+				endColumn,
+			);
 		},
 		[sessionId, user],
 	);
@@ -136,12 +165,15 @@ export function useCollaborationSession() {
 		setIsConnected(false);
 	}, []);
 
-	const updateUserName = useCallback((name: string) => {
-		if (!user) return;
-		const updatedUser = { ...user, name };
-		setUser(updatedUser);
-		localStorage.setItem("sessionUser", JSON.stringify(updatedUser));
-	}, [user]);
+	const updateUserName = useCallback(
+		(name: string) => {
+			if (!user) return;
+			const updatedUser = { ...user, name };
+			setUser(updatedUser);
+			localStorage.setItem("sessionUser", JSON.stringify(updatedUser));
+		},
+		[user],
+	);
 
 	useEffect(() => {
 		return () => {
